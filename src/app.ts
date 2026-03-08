@@ -4,6 +4,7 @@ import type Database from "better-sqlite3";
 import { SqliteSessionStore } from "./db/session-store.js";
 import { createAuthRouter } from "./routes/auth.js";
 import { createDashboardRouter } from "./routes/dashboard.js";
+import { createCoursesRouter } from "./routes/courses.js";
 
 export function createApp(db: Database.Database): express.Express {
   const app = express();
@@ -26,6 +27,7 @@ export function createApp(db: Database.Database): express.Express {
 
   app.use(createAuthRouter(db));
   app.use(createDashboardRouter());
+  app.use(createCoursesRouter(db));
 
   app.get("/", (_req, res) => {
     res.redirect("/login");

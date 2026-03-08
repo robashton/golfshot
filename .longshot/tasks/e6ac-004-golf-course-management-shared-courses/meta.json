@@ -2,9 +2,11 @@
   "id": "e6ac-4",
   "slug": "golf-course-management-shared-courses",
   "title": "Golf course management (shared courses + holes)",
-  "status": "drafting",
+  "status": "complete",
   "created": "2026-03-08T10:22:12.552Z",
-  "updated": "2026-03-08T10:22:12.552Z",
+  "updated": "2026-03-08T10:59:00.905Z",
   "dependsOn": [],
-  "parentTaskId": "e6ac-2"
+  "parentTaskId": "e6ac-2",
+  "completed": "2026-03-08T10:59:00.905Z",
+  "checkpoint": "c1e0d9c8a1135239ef6c2d5d96b1042cddebd6e4"
 }

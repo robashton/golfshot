@@ -60,14 +60,48 @@ Play mode normalizes orientation: tee at bottom, green toward top.
 | sess | TEXT | NOT NULL |
 | expired | TEXT | NOT NULL (indexed) |
 
+**courses** table:
+| Column | Type | Constraints |
+|--------|------|-------------|
+| id | INTEGER | PRIMARY KEY AUTOINCREMENT |
+| name | TEXT | NOT NULL |
+| location | TEXT | NOT NULL DEFAULT '' |
+| created_by | INTEGER | NOT NULL, FK → users(id) |
+| created_at | TEXT | NOT NULL DEFAULT datetime('now') |
+
+**holes** table:
+| Column | Type | Constraints |
+|--------|------|-------------|
+| id | INTEGER | PRIMARY KEY AUTOINCREMENT |
+| course_id | INTEGER | NOT NULL, FK → courses(id) ON DELETE CASCADE |
+| hole_number | INTEGER | NOT NULL |
+| par | INTEGER | NOT NULL |
+| yardage | INTEGER | NOT NULL |
+| geometry | TEXT | NOT NULL DEFAULT '{}' (JSON: tee, green, hazards, layups, fairway_points) |
+| | | UNIQUE(course_id, hole_number) |
+
 ### Authentication
 
 - **Registration**: `POST /register` -- email + password (min 8 chars), bcrypt hash (10 rounds), creates session, redirects to `/dashboard`. Rejects duplicate emails (409).
 - **Login**: `POST /login` -- verifies email + bcrypt hash, creates session, redirects to `/dashboard`. Returns 401 on bad credentials.
 - **Logout**: `POST /logout` -- destroys session, redirects to `/login`.
 - **Session middleware**: cookie-based via express-session with custom `SqliteSessionStore`. Sessions stored in `sessions` table with expiry. 24-hour max age.
-- **Auth guard**: `requireAuth` middleware redirects unauthenticated requests to `/login`. Protects `/dashboard`.
+- **Auth guard**: `requireAuth` middleware redirects unauthenticated requests to `/login`. Protects `/dashboard` and all `/courses/*` routes.
 - **Forms**: Server-rendered HTML forms at `GET /register` and `GET /login`. No SPA.
+
+### Courses & holes
+
+- **List courses**: `GET /courses` -- shows all courses with name, location, hole count. Auth-protected.
+- **Create course**: `POST /courses` -- name (required) + location. Redirects to course detail.
+- **View course**: `GET /courses/:id` -- shows course details and all holes with geometry summary.
+- **Edit course**: `GET /courses/:id/edit` + `POST /courses/:id` -- update name and location.
+- **Delete course**: `POST /courses/:id/delete` -- cascading delete of course and all holes.
+- **Add hole**: `GET /courses/:id/holes/new` + `POST /courses/:id/holes` -- hole number, par, yardage, tee/green coords, hazards, layups.
+- **Edit hole**: `GET /courses/:courseId/holes/:holeId/edit` + `POST /courses/:courseId/holes/:holeId` -- update all hole fields.
+- **Delete hole**: `POST /courses/:courseId/holes/:holeId/delete`.
+- **Import stub**: `GET /courses/import` -- placeholder for open data import with "coming soon" message.
+- **Seed import**: `POST /courses/import-seed` -- imports `mearns_castle_geometry.json` format. Parses tee/green/layup coords and unknown coordinate pairs as hazards.
+- **Geometry JSON**: holes store `geometry` as a JSON column with keys: `tee` ({lat, lng}), `green` ({lat, lng}), `hazards` (array of {name, lat, lng}), `layups` (array of {name, lat, lng}), `fairway_points` (array of {lat, lng}).
 
 ## Current seed data
 
@@ -92,11 +126,12 @@ Each hole has: tee, layup, green coordinates, hazard points (brookA/B), stock pl
 
 ## Implementation sequence
 1. ~~Project skeleton, shell.nix, and user auth~~ (**done** -- Express server, SQLite, bcrypt auth, 23 tests)
-2. Edit mode (satellite basemap, marker capture, JSON save/load)
-3. Strategy mode (simplified hole renderer, stock route, carry overlays)
-4. Dispersion ellipses (projected shot ellipses aligned to hole direction)
-5. Printable export (pocket cards, booklet pages, print CSS)
-6. Public-data bootstrap (search/select course, approximate geometry from OSM/golf data)
+2. ~~Golf course management~~ (**done** -- CRUD for courses + holes, seed data import, 17 tests)
+3. Edit mode (satellite basemap, marker capture, JSON save/load)
+4. Strategy mode (simplified hole renderer, stock route, carry overlays)
+5. Dispersion ellipses (projected shot ellipses aligned to hole direction)
+6. Printable export (pocket cards, booklet pages, print CSS)
+7. Public-data bootstrap (search/select course, approximate geometry from OSM/golf data)
 
 ## Project file structure
 
@@ -110,7 +145,7 @@ src/
   index.ts                          -- server entry point (port 3000)
   app.ts                            -- Express app setup (exported for testing)
   db/
-    schema.ts                       -- database schema (users, sessions tables)
+    schema.ts                       -- database schema (users, sessions, courses, holes tables)
     connection.ts                   -- database connection management
     session-store.ts                -- SQLite-backed express-session store
   middleware/
@@ -118,14 +153,14 @@ src/
   routes/
     auth.ts                         -- register, login, logout endpoints + HTML forms
     dashboard.ts                    -- protected dashboard page
+    courses.ts                      -- course + hole CRUD, seed import, import stub
 tests/
   helpers.ts                        -- test context with in-memory DB
   schema.test.ts                    -- database schema tests (4 tests)
   auth.test.ts                      -- auth endpoint tests (13 tests)
   auth-guard.test.ts                -- auth guard middleware tests (3 tests)
   password.test.ts                  -- bcrypt hashing tests (3 tests)
-docs/
-  product-brief.md                  -- product vision and workflow
+  courses.test.ts                   -- course + hole CRUD tests (17 tests)
   architecture-notes.md             -- data model and rendering design
   initial-longshot-backlog.md       -- 6-task implementation plan
   chat-handoff-2026-03-08.md        -- prior conversation context and decisions
