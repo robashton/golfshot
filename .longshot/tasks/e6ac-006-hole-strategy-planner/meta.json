@@ -2,9 +2,11 @@
   "id": "e6ac-6",
   "slug": "hole-strategy-planner",
   "title": "Hole strategy planner",
-  "status": "drafting",
+  "status": "complete",
   "created": "2026-03-08T10:22:12.552Z",
-  "updated": "2026-03-08T10:22:12.552Z",
+  "updated": "2026-03-08T11:47:08.379Z",
   "dependsOn": [],
-  "parentTaskId": "e6ac-2"
+  "parentTaskId": "e6ac-2",
+  "completed": "2026-03-08T11:47:08.379Z",
+  "checkpoint": "02fec4abfded08ef07930d9f0ee32d8ce9cb8338"
 }

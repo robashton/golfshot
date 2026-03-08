@@ -6,7 +6,8 @@
 |-------|---------|------|
 | **Course geometry** | Structural facts: tee, green, fairway, hazards, key points | `data/mearns_castle_geometry.json` |
 | **Bag profile** | Player-specific stock carries per club | `data/bag_profile.json` |
-| **Strategy plan** | Per-hole decisions: stock route, aggressive option, no-go zones, preferred miss, notes | Not yet created |
+| **Strategy plan** | Per-hole decisions: stock route, aggressive option, no-go zones, preferred miss, notes | `src/routes/strategies.ts` |
+
 
 Key principle: **geometry, player model, and strategy are separated**. Multiple strategy plans can derive from the same geometry + bag profile (safe, normal, aggressive, windy-day).
 

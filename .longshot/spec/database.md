@@ -57,3 +57,30 @@ Indexed on `user_id`. One bag per user can be active at a time.
 | carry_yards | INTEGER | NOT NULL |
 
 Indexed on `bag_id`. Cascade-deletes when parent bag is deleted.
+
+## strategies
+| Column | Type | Constraints |
+|--------|------|-------------|
+| id | INTEGER | PRIMARY KEY AUTOINCREMENT |
+| user_id | INTEGER | NOT NULL, FK → users(id) |
+| hole_id | INTEGER | NOT NULL, FK → holes(id) ON DELETE CASCADE |
+| bag_id | INTEGER | NOT NULL, FK → bags(id) |
+| name | TEXT | NOT NULL |
+| preferred_miss | TEXT | NOT NULL DEFAULT '' |
+| no_go_zones | TEXT | NOT NULL DEFAULT '[]' (JSON array of strings) |
+| overall_notes | TEXT | NOT NULL DEFAULT '' |
+| created_at | TEXT | NOT NULL DEFAULT datetime('now') |
+
+Indexed on `hole_id` and `user_id`. Multiple strategies per hole allowed. Cascade-deletes when parent hole is deleted.
+
+## strategy_shots
+| Column | Type | Constraints |
+|--------|------|-------------|
+| id | INTEGER | PRIMARY KEY AUTOINCREMENT |
+| strategy_id | INTEGER | NOT NULL, FK → strategies(id) ON DELETE CASCADE |
+| shot_number | INTEGER | NOT NULL |
+| club | TEXT | NOT NULL |
+| target | TEXT | NOT NULL DEFAULT '{}' (JSON: lat, lng) |
+| notes | TEXT | NOT NULL DEFAULT '' |
+
+Indexed on `strategy_id`. Cascade-deletes when parent strategy is deleted.

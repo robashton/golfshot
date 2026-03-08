@@ -42,3 +42,14 @@ Per-user bag management. All bag routes enforce user isolation (can only see/edi
 - `POST /bags/:bagId/clubs/:clubId/delete` -- remove individual club
 - `GET /bags/import` -- import form (paste JSON)
 - `POST /bags/import-seed` -- imports `bag_profile.json` format (player name → bag name, stock_carries_yards → clubs)
+
+## Hole strategies
+
+Per-user strategy planning for holes. Strategies are scoped to a hole and use clubs from a bag. All routes enforce user isolation.
+
+- `GET /courses/:courseId/holes/:holeId/strategies` -- list user's strategies for a hole
+- `GET /courses/:courseId/holes/:holeId/strategies/new` -- new strategy form (uses active bag's clubs with carry distances)
+- `POST /courses/:courseId/holes/:holeId/strategies` -- create strategy with shots, preferred miss, no-go zones, notes. Requires bag_id.
+- `GET /courses/:courseId/holes/:holeId/strategies/:strategyId` -- view strategy with shots, club names, carry distances
+- `GET /courses/:courseId/holes/:holeId/strategies/:strategyId/edit` + `POST .../:strategyId` -- edit strategy metadata and shots (delete-and-replace on save)
+- `POST /courses/:courseId/holes/:holeId/strategies/:strategyId/delete` -- delete strategy and all shots

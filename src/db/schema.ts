@@ -58,5 +58,31 @@ export function initializeDatabase(db: Database.Database): void {
     );
 
     CREATE INDEX IF NOT EXISTS idx_clubs_bag_id ON clubs(bag_id);
+
+    CREATE TABLE IF NOT EXISTS strategies (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL REFERENCES users(id),
+      hole_id INTEGER NOT NULL REFERENCES holes(id) ON DELETE CASCADE,
+      bag_id INTEGER NOT NULL REFERENCES bags(id),
+      name TEXT NOT NULL,
+      preferred_miss TEXT NOT NULL DEFAULT '',
+      no_go_zones TEXT NOT NULL DEFAULT '[]',
+      overall_notes TEXT NOT NULL DEFAULT '',
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_strategies_hole_id ON strategies(hole_id);
+    CREATE INDEX IF NOT EXISTS idx_strategies_user_id ON strategies(user_id);
+
+    CREATE TABLE IF NOT EXISTS strategy_shots (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      strategy_id INTEGER NOT NULL REFERENCES strategies(id) ON DELETE CASCADE,
+      shot_number INTEGER NOT NULL,
+      club TEXT NOT NULL,
+      target TEXT NOT NULL DEFAULT '{}',
+      notes TEXT NOT NULL DEFAULT ''
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_strategy_shots_strategy_id ON strategy_shots(strategy_id);
   `);
 }

@@ -6,6 +6,7 @@ import { createAuthRouter } from "./routes/auth.js";
 import { createDashboardRouter } from "./routes/dashboard.js";
 import { createCoursesRouter } from "./routes/courses.js";
 import { createBagsRouter } from "./routes/bags.js";
+import { createStrategiesRouter } from "./routes/strategies.js";
 
 export function createApp(db: Database.Database): express.Express {
   const app = express();
@@ -30,6 +31,7 @@ export function createApp(db: Database.Database): express.Express {
   app.use(createDashboardRouter());
   app.use(createCoursesRouter(db));
   app.use(createBagsRouter(db));
+  app.use(createStrategiesRouter(db));
 
   app.get("/", (_req, res) => {
     res.redirect("/login");
