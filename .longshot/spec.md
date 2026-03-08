@@ -36,12 +36,38 @@ Key principle: **geometry, player model, and strategy are separated**. Multiple 
 
 Play mode normalizes orientation: tee at bottom, green toward top.
 
-### Technical shape
-- Web app with client-side map editing
-- JSON-backed course/bag/plan files
-- Static HTML export for strategy cards
-- Later: PDF export
-- No backend required for core workflow (file-based)
+### Technical stack
+- **Server**: Express (TypeScript) with server-rendered HTML
+- **Database**: SQLite via better-sqlite3 (stored at `data/golfshot.db`)
+- **Auth**: bcrypt password hashing, cookie-based sessions (SQLite-backed session store)
+- **Dev tooling**: tsx for dev server, vitest + supertest for testing, nix-shell for environment
+- **Build**: TypeScript compiled to `dist/`, ES modules throughout
+
+### Database schema
+
+**users** table:
+| Column | Type | Constraints |
+|--------|------|-------------|
+| id | INTEGER | PRIMARY KEY AUTOINCREMENT |
+| email | TEXT | NOT NULL UNIQUE |
+| password_hash | TEXT | NOT NULL |
+| created_at | TEXT | NOT NULL DEFAULT datetime('now') |
+
+**sessions** table:
+| Column | Type | Constraints |
+|--------|------|-------------|
+| sid | TEXT | PRIMARY KEY |
+| sess | TEXT | NOT NULL |
+| expired | TEXT | NOT NULL (indexed) |
+
+### Authentication
+
+- **Registration**: `POST /register` -- email + password (min 8 chars), bcrypt hash (10 rounds), creates session, redirects to `/dashboard`. Rejects duplicate emails (409).
+- **Login**: `POST /login` -- verifies email + bcrypt hash, creates session, redirects to `/dashboard`. Returns 401 on bad credentials.
+- **Logout**: `POST /logout` -- destroys session, redirects to `/login`.
+- **Session middleware**: cookie-based via express-session with custom `SqliteSessionStore`. Sessions stored in `sessions` table with expiry. 24-hour max age.
+- **Auth guard**: `requireAuth` middleware redirects unauthenticated requests to `/login`. Protects `/dashboard`.
+- **Forms**: Server-rendered HTML forms at `GET /register` and `GET /login`. No SPA.
 
 ## Current seed data
 
@@ -64,17 +90,40 @@ Each hole has: tee, layup, green coordinates, hazard points (brookA/B), stock pl
 - Support multiple plans from same geometry
 - Printable pocket cards are the primary deliverable
 
-## Planned implementation sequence
-1. Project skeleton and schemas (TypeScript types for geometry, bag, strategy)
+## Implementation sequence
+1. ~~Project skeleton, shell.nix, and user auth~~ (**done** -- Express server, SQLite, bcrypt auth, 23 tests)
 2. Edit mode (satellite basemap, marker capture, JSON save/load)
 3. Strategy mode (simplified hole renderer, stock route, carry overlays)
 4. Dispersion ellipses (projected shot ellipses aligned to hole direction)
 5. Printable export (pocket cards, booklet pages, print CSS)
 6. Public-data bootstrap (search/select course, approximate geometry from OSM/golf data)
 
-## Repository structure
+## Project file structure
+
 ```
-README.md                           -- seed pack manifest
+shell.nix                           -- nix dev environment (node, sqlite)
+package.json                        -- dependencies and scripts
+tsconfig.json                       -- TypeScript config (strict, ES2022, Node16 modules)
+vitest.config.ts                    -- test runner config
+CLAUDE.md                           -- dev guide and conventions
+src/
+  index.ts                          -- server entry point (port 3000)
+  app.ts                            -- Express app setup (exported for testing)
+  db/
+    schema.ts                       -- database schema (users, sessions tables)
+    connection.ts                   -- database connection management
+    session-store.ts                -- SQLite-backed express-session store
+  middleware/
+    auth-guard.ts                   -- requireAuth middleware
+  routes/
+    auth.ts                         -- register, login, logout endpoints + HTML forms
+    dashboard.ts                    -- protected dashboard page
+tests/
+  helpers.ts                        -- test context with in-memory DB
+  schema.test.ts                    -- database schema tests (4 tests)
+  auth.test.ts                      -- auth endpoint tests (13 tests)
+  auth-guard.test.ts                -- auth guard middleware tests (3 tests)
+  password.test.ts                  -- bcrypt hashing tests (3 tests)
 docs/
   product-brief.md                  -- product vision and workflow
   architecture-notes.md             -- data model and rendering design
@@ -84,5 +133,3 @@ data/
   bag_profile.json                  -- player bag profile
   mearns_castle_geometry.json       -- seed hole geometry (Mearns holes 1 & 7)
 ```
-
-No application code exists yet. The `src/` directory and `package.json` will be created in the first implementation task.

@@ -1,5 +1,10 @@
 node_modules/
 dist/
 
+# database
+data/*.db
+data/*.db-wal
+data/*.db-shm
+
 # longshot transient state
 CLAUDE.md

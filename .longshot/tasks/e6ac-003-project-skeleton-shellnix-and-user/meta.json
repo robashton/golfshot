@@ -2,9 +2,11 @@
   "id": "e6ac-3",
   "slug": "project-skeleton-shellnix-and-user",
   "title": "Project skeleton, shell.nix, and user auth",
-  "status": "drafting",
+  "status": "complete",
   "created": "2026-03-08T10:22:12.552Z",
-  "updated": "2026-03-08T10:22:12.552Z",
+  "updated": "2026-03-08T10:40:14.411Z",
   "dependsOn": [],
-  "parentTaskId": "e6ac-2"
+  "parentTaskId": "e6ac-2",
+  "completed": "2026-03-08T10:40:14.411Z",
+  "checkpoint": "25e7d4cfb1afc23259748a061c0d1ed0fc1655db"
 }
