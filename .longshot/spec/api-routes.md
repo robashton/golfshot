@@ -24,8 +24,11 @@ Session middleware: cookie-based via express-session with custom `SqliteSessionS
 - `GET /courses/:id/holes/new` + `POST /courses/:id/holes` -- add hole (number, par, yardage, tee/green coords, hazards, layups)
 - `GET /courses/:courseId/holes/:holeId/edit` + `POST /courses/:courseId/holes/:holeId` -- update all hole fields
 - `POST /courses/:courseId/holes/:holeId/delete` -- delete hole
-- `GET /courses/import` -- placeholder for open data import ("coming soon")
+- `GET /courses/import` -- import page with OSM search form and seed JSON textarea
 - `POST /courses/import-seed` -- imports `mearns_castle_geometry.json` format. Parses tee/green/layup coords and unknown coordinate pairs as hazards.
+- `GET /courses/import/search?q={query}` -- searches Nominatim for golf courses, renders results with preview links
+- `GET /courses/import/preview?osm_type=...&osm_id=...&name=...&location=...&lat=...&lon=...` -- queries Overpass for course detail, shows hole table with geometry, import button
+- `POST /courses/import/osm` -- re-queries Overpass, creates course + holes in DB with tee/green/hazard geometry, redirects to course detail
 
 ## Golf bags (My Bag)
 

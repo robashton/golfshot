@@ -24,5 +24,6 @@ Play mode normalizes orientation: tee at bottom, green toward top.
 - **Server**: Express (TypeScript) with server-rendered HTML
 - **Database**: SQLite via better-sqlite3 (stored at `data/golfshot.db`)
 - **Auth**: bcrypt password hashing, cookie-based sessions (SQLite-backed session store)
+- **External data**: OpenStreetMap (Nominatim search + Overpass API for hole geometry). ODbL license, no API key required.
 - **Dev tooling**: tsx for dev server, vitest + supertest for testing, nix-shell for environment
 - **Build**: TypeScript compiled to `dist/`, ES modules throughout

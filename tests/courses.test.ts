@@ -406,13 +406,13 @@ describe("course endpoints", () => {
   });
 
   describe("GET /courses/import", () => {
-    it("shows import page with coming soon message", async () => {
+    it("shows import page with OSM search form", async () => {
       const { login } = authedAgent(ctx);
       const agent = await login();
 
       const res = await agent.get("/courses/import");
       expect(res.status).toBe(200);
-      expect(res.text).toContain("Coming soon");
+      expect(res.text).toContain("Search OpenStreetMap");
     });
   });
 });

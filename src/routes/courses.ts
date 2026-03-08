@@ -1,6 +1,10 @@
 import { Router } from "express";
 import type Database from "better-sqlite3";
 import { requireAuth } from "../middleware/auth-guard.js";
+import { searchGolfCourses } from "../osm/nominatim.js";
+import { fetchCourseData } from "../osm/overpass.js";
+import type { NominatimResult } from "../osm/nominatim.js";
+import type { ParsedCourse } from "../osm/overpass.js";
 
 interface CourseRow {
   id: number;
@@ -143,6 +147,118 @@ export function createCoursesRouter(db: Database.Database): Router {
 
     const courseId = importAll();
     res.redirect(`/courses/${courseId}`);
+  });
+
+  // Search OSM for golf courses
+  router.get("/courses/import/search", requireAuth, async (req, res, next) => {
+    const q = (req.query.q as string | undefined) ?? "";
+    if (!q.trim()) {
+      res.redirect("/courses/import");
+      return;
+    }
+
+    try {
+      const results = await searchGolfCourses(q);
+      res.send(searchResultsPage(q, results));
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  // Preview OSM course data before import
+  router.get("/courses/import/preview", requireAuth, async (req, res, next) => {
+    const osmType = req.query.osm_type as string | undefined;
+    const osmIdStr = req.query.osm_id as string | undefined;
+    const name = req.query.name as string | undefined;
+    const location = req.query.location as string | undefined;
+    const lat = req.query.lat as string | undefined;
+    const lon = req.query.lon as string | undefined;
+
+    if (!osmType || !osmIdStr) {
+      res.status(400).send(importPage("Missing OSM type or ID."));
+      return;
+    }
+
+    const osmId = parseInt(osmIdStr, 10);
+    if (isNaN(osmId)) {
+      res.status(400).send(importPage("Invalid OSM ID."));
+      return;
+    }
+
+    try {
+      const course = await fetchCourseData(
+        osmType,
+        osmId,
+        name ?? "Unknown Course",
+        location ?? "",
+        lat ? parseFloat(lat) : undefined,
+        lon ? parseFloat(lon) : undefined
+      );
+      res.send(previewPage(course, osmType, osmId, lat, lon));
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  // Import course from OSM
+  router.post("/courses/import/osm", requireAuth, async (req, res, next) => {
+    const { osm_type, osm_id, name, location, lat, lon } = req.body as Record<string, string>;
+
+    if (!osm_type || !osm_id) {
+      res.status(400).send(importPage("Missing OSM type or ID."));
+      return;
+    }
+
+    const osmId = parseInt(osm_id, 10);
+    if (isNaN(osmId)) {
+      res.status(400).send(importPage("Invalid OSM ID."));
+      return;
+    }
+
+    try {
+      const course = await fetchCourseData(
+        osm_type,
+        osmId,
+        name ?? "Unknown Course",
+        location ?? "",
+        lat ? parseFloat(lat) : undefined,
+        lon ? parseFloat(lon) : undefined
+      );
+
+      const insertCourse = db.prepare(
+        "INSERT INTO courses (name, location, created_by) VALUES (?, ?, ?)"
+      );
+      const insertHole = db.prepare(
+        "INSERT INTO holes (course_id, hole_number, par, yardage, geometry) VALUES (?, ?, ?, ?, ?)"
+      );
+
+      const importAll = db.transaction(() => {
+        const result = insertCourse.run(course.name, course.location, req.session.userId!);
+        const courseId = Number(result.lastInsertRowid);
+
+        for (const hole of course.holes) {
+          const geometry: HoleGeometry = {};
+          if (hole.tee) geometry.tee = hole.tee;
+          if (hole.green) geometry.green = hole.green;
+          if (hole.hazards && hole.hazards.length > 0) geometry.hazards = hole.hazards;
+
+          insertHole.run(
+            courseId,
+            hole.number,
+            hole.par,
+            hole.yardage,
+            JSON.stringify(geometry)
+          );
+        }
+
+        return courseId;
+      });
+
+      const courseId = importAll();
+      res.redirect(`/courses/${courseId}`);
+    } catch (err) {
+      next(err);
+    }
   });
 
   // Create course
@@ -630,16 +746,106 @@ function importPage(error?: string): string {
   ${navBar()}
   <h1>Import Course</h1>
   ${error ? `<p style="color:red">${escapeHtml(error)}</p>` : ""}
+  <h2>Search OpenStreetMap</h2>
+  <form method="GET" action="/courses/import/search">
+    <input type="text" name="q" placeholder="Course name..." required>
+    <button type="submit">Search</button>
+  </form>
+  <hr>
   <h2>Import from seed data (JSON)</h2>
   <p>Paste JSON in the format of <code>mearns_castle_geometry.json</code>:</p>
   <form method="POST" action="/courses/import-seed">
     <textarea name="json" rows="15" cols="60" required></textarea><br>
     <button type="submit">Import</button>
   </form>
-  <hr>
-  <h2>Import from Open Data</h2>
-  <p>Coming soon: import courses from OpenStreetMap and golf course APIs.</p>
   <p><a href="/courses">Back to courses</a></p>
+</body></html>`;
+}
+
+function formatLocation(result: NominatimResult): string {
+  const addr = result.address;
+  if (!addr) return "";
+  const parts = [addr.city ?? addr.town ?? addr.village, addr.county, addr.country].filter(Boolean);
+  return parts.join(", ");
+}
+
+function searchResultsPage(query: string, results: NominatimResult[]): string {
+  const resultsList = results
+    .map((r) => {
+      const location = formatLocation(r);
+      const params = new URLSearchParams({
+        osm_type: r.osm_type,
+        osm_id: String(r.osm_id),
+        name: r.display_name.split(",")[0],
+        location,
+        lat: r.lat,
+        lon: r.lon,
+      });
+      return `<li style="margin-bottom:1em">
+        <strong>${escapeHtml(r.display_name.split(",")[0])}</strong><br>
+        ${escapeHtml(location)}<br>
+        <a href="/courses/import/preview?${escapeHtml(params.toString())}">Preview &amp; Import</a>
+      </li>`;
+    })
+    .join("");
+
+  return `${pageHead("Search Results")}
+  ${navBar()}
+  <h1>Search Results</h1>
+  <p>Results for: <strong>${escapeHtml(query)}</strong></p>
+  ${
+    results.length === 0
+      ? "<p>No results found. Try a different search term.</p>"
+      : `<ul style="list-style:none;padding:0">${resultsList}</ul>`
+  }
+  <p><a href="/courses/import">Back to import</a></p>
+</body></html>`;
+}
+
+function previewPage(
+  course: ParsedCourse,
+  osmType: string,
+  osmId: number,
+  lat?: string,
+  lon?: string
+): string {
+  const holeRows = course.holes
+    .map(
+      (h) => `<tr>
+        <td>${h.number}</td>
+        <td>${h.par}</td>
+        <td>${h.yardage}</td>
+        <td>${h.tee ? `${h.tee.lat.toFixed(6)}, ${h.tee.lng.toFixed(6)}` : "-"}</td>
+        <td>${h.green ? `${h.green.lat.toFixed(6)}, ${h.green.lng.toFixed(6)}` : "-"}</td>
+      </tr>`
+    )
+    .join("");
+
+  const holeSection =
+    course.holes.length === 0
+      ? "<p>No hole data found in OpenStreetMap. Course will be imported with name and location only.</p>"
+      : `<table>
+          <thead><tr><th>#</th><th>Par</th><th>Yards</th><th>Tee</th><th>Green</th></tr></thead>
+          <tbody>${holeRows}</tbody>
+        </table>`;
+
+  return `${pageHead("Preview Import")}
+  ${navBar()}
+  <h1>Preview: ${escapeHtml(course.name)}</h1>
+  <p>Location: ${escapeHtml(course.location) || "N/A"}</p>
+  <p>Holes found: ${course.holes.length}</p>
+  ${holeSection}
+  <form method="POST" action="/courses/import/osm">
+    <input type="hidden" name="osm_type" value="${escapeHtml(osmType)}">
+    <input type="hidden" name="osm_id" value="${osmId}">
+    <input type="hidden" name="name" value="${escapeHtml(course.name)}">
+    <input type="hidden" name="location" value="${escapeHtml(course.location)}">
+    ${lat ? `<input type="hidden" name="lat" value="${escapeHtml(lat)}">` : ""}
+    ${lon ? `<input type="hidden" name="lon" value="${escapeHtml(lon)}">` : ""}
+    <button type="submit">Import this course</button>
+  </form>
+  <p><a href="/courses/import">Back to search</a></p>
+  <p style="font-size:small;color:#666">Data &copy; OpenStreetMap contributors</p>
 </body></html>`;
 }
 
