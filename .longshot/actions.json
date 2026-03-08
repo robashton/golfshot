@@ -1,0 +1,14 @@
+[
+  {
+    "id": "83986b9c",
+    "name": "Install & Build",
+    "script": "83986b9c.sh",
+    "cwd": "/Users/robashton/src/golfshot",
+    "createdAt": "2026-03-08T12:12:26.361Z",
+    "lastResult": {
+      "exitCode": 0,
+      "summary": "The \"Install & Build\" action completed successfully (exit code 0). Dependencies were installed (250 packages) and TypeScript compiled without errors, though there are 8 npm vulnerabilities (5 moderate, 3 high) and several deprecated package warnings.",
+      "timestamp": "2026-03-08T12:12:38.516Z"
+    }
+  }
+]
