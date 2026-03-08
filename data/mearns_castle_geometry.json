@@ -1,0 +1,83 @@
+{
+  "course": "Mearns Castle Golf Academy",
+  "holes": [
+    {
+      "number": 1,
+      "name": "Brook decision",
+      "par": 4,
+      "yards": 385,
+      "tee": [
+        55.770297,
+        -4.2894959
+      ],
+      "layup": [
+        55.770767799999994,
+        -4.2879295
+      ],
+      "green": [
+        55.7717575,
+        -4.2844963
+      ],
+      "brookA": [
+        55.7706712,
+        -4.2860842
+      ],
+      "brookB": [
+        55.771395399999996,
+        -4.2879403
+      ],
+      "stock_plan": [
+        "8i",
+        "7w",
+        "wedge"
+      ],
+      "notes": [
+        "Brook crosses the fairway at roughly 180\u2013190 yards from the tee.",
+        "7w is the awkward tee club because it sits right in the hazard band.",
+        "8i is the conservative score-protection play.",
+        "Driver is only the intentional aggressive line when fully committed."
+      ]
+    },
+    {
+      "number": 7,
+      "name": "False aggression",
+      "par": 4,
+      "yards": 394,
+      "tee": [
+        55.774497200000006,
+        -4.2911267
+      ],
+      "layup": [
+        55.7735619,
+        -4.289141900000001
+      ],
+      "green": [
+        55.7719627,
+        -4.2865777000000005
+      ],
+      "brookA": [
+        55.7722222,
+        -4.2865455
+      ],
+      "brookB": [
+        55.7719566,
+        -4.2870283
+      ],
+      "crest": [
+        55.77057,
+        -4.29073
+      ],
+      "stock_plan": [
+        "7w",
+        "7w",
+        "wedge / short iron"
+      ],
+      "notes": [
+        "Little real trouble at 190.",
+        "Driver adds dispersion more than it improves the hole.",
+        "Right-side driver miss can finish awkwardly toward the 8th green.",
+        "Accepting 7w + 7w is the smart architecture play."
+      ]
+    }
+  ]
+}

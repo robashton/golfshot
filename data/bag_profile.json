@@ -1,0 +1,15 @@
+{
+  "player": "user",
+  "stock_carries_yards": {
+    "8i": 145,
+    "7i": 155,
+    "7w": 190,
+    "Driver": 230
+  },
+  "notes": [
+    "7i typical range reported as 150\u2013160 yards; use 155 as planning carry.",
+    "7w typical range reported as 180\u2013200 yards; use 190 as planning carry.",
+    "Driver controlled planning carry is 230 yards.",
+    "Goal is conservative position golf: mostly 7i / 7w, driver only on genuinely safe holes."
+  ]
+}
