@@ -1,0 +1,11 @@
+{
+  "id": "e6ac-1",
+  "slug": "write-initial-project-spec-from",
+  "title": "Write initial project spec from codebase analysis. Read the codebase (README,...",
+  "status": "complete",
+  "created": "2026-03-08T05:41:14.673Z",
+  "updated": "2026-03-08T05:45:54.603Z",
+  "dependsOn": [],
+  "completed": "2026-03-08T05:45:54.603Z",
+  "checkpoint": "587069f8154f73af99b6cabe84b090f289c9c5ea"
+}
