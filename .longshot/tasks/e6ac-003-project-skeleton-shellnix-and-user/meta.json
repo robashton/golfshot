@@ -1,0 +1,10 @@
+{
+  "id": "e6ac-3",
+  "slug": "project-skeleton-shellnix-and-user",
+  "title": "Project skeleton, shell.nix, and user auth",
+  "status": "drafting",
+  "created": "2026-03-08T10:22:12.552Z",
+  "updated": "2026-03-08T10:22:12.552Z",
+  "dependsOn": [],
+  "parentTaskId": "e6ac-2"
+}
