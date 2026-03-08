@@ -84,3 +84,12 @@ Indexed on `hole_id` and `user_id`. Multiple strategies per hole allowed. Cascad
 | notes | TEXT | NOT NULL DEFAULT '' |
 
 Indexed on `strategy_id`. Cascade-deletes when parent strategy is deleted.
+
+## schema_version
+| Column | Type | Constraints |
+|--------|------|-------------|
+| id | INTEGER | PRIMARY KEY |
+| name | TEXT | NOT NULL |
+| applied_at | TEXT | NOT NULL DEFAULT datetime('now') |
+
+Tracks which migrations have been applied. Managed by `src/db/migrate.ts`.

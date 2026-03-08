@@ -1,0 +1,11 @@
+{
+  "id": "e6ac-8",
+  "slug": "create-a-seed-script-for",
+  "title": "Create a seed script for local dev that idempotently sets up the database (if...",
+  "status": "complete",
+  "created": "2026-03-08T11:58:48.487Z",
+  "updated": "2026-03-08T12:08:44.022Z",
+  "dependsOn": [],
+  "completed": "2026-03-08T12:08:44.022Z",
+  "checkpoint": "30a467f44b1615ebc4de6639e1239f80734d468f"
+}

@@ -6,7 +6,10 @@
 3. ~~Golf bag management~~ (**done** -- CRUD for bags + clubs, set active, seed import, 18 tests)
 4. ~~Hole strategy planner~~ (**done** -- strategy CRUD with shots, clubs from bag, carry distances, no-go zones, 21 tests)
 5. ~~Public-data bootstrap~~ (**done** -- OSM search via Nominatim, course preview via Overpass, import with hole geometry, 9 tests)
-6. Edit mode (satellite basemap, marker capture, JSON save/load)
+6. ~~Dev seed script + migrations~~ (**done** -- numbered migration system, idempotent seed script with dev user/course/bag)
+7. Edit mode (satellite basemap, marker capture, JSON save/load)
+8. Dispersion ellipses (projected shot ellipses aligned to hole direction)
+9. Printable export (pocket cards, booklet pages, print CSS)
 7. Dispersion ellipses (projected shot ellipses aligned to hole direction)
 8. Printable export (pocket cards, booklet pages, print CSS)
 
@@ -21,21 +24,23 @@
 - Strategy CRUD tests (21)
 - OSM integration tests (9)
 ## File structure
-
-```
 shell.nix                           -- nix dev environment (node, sqlite)
 package.json                        -- dependencies and scripts
 vitest.config.ts                    -- test runner config
 tsconfig.json                       -- TypeScript config
 CLAUDE.md                           -- dev guide and conventions
+scripts/
+  seed.ts                           -- idempotent dev seed script (npm run seed)
 src/
   index.ts                          -- server entry point (port 3000)
   app.ts                            -- Express app setup (exported for testing)
   db/
-    schema.ts                       -- database schema (users, sessions, courses, holes, bags, clubs, strategies, strategy_shots)
+    schema.ts                       -- initializeDatabase() delegates to runMigrations()
+    migrate.ts                      -- migration runner (schema_version tracking, applies pending migrations)
     connection.ts                   -- database connection management
     session-store.ts                -- SQLite-backed express-session store
-  middleware/
+    migrations/
+      001-initial-schema.ts         -- original schema (users, sessions, courses, holes, bags, clubs, strategies, strategy_shots)
     auth-guard.ts                   -- requireAuth middleware
   routes/
     auth.ts                         -- register, login, logout endpoints + HTML forms

@@ -26,5 +26,5 @@ The satellite editor is the authoring tool; the printable strategy cards are the
 - [Architecture](spec/architecture.md) -- tech stack, data model, rendering
 - [Database schema](spec/database.md) -- all table definitions
 - [API routes](spec/api-routes.md) -- auth, courses, bags, strategies endpoints
-- [Seed data](spec/seed-data.md) -- bag_profile.json, mearns_castle_geometry.json
+- [Seed data & dev setup](spec/seed-data.md) -- dev seed script, migration infrastructure, seed JSON files
 - [Implementation](spec/implementation.md) -- sequence, file structure

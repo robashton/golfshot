@@ -1,6 +1,25 @@
-# Seed data & course import
+# Seed data & dev setup
 
-## Seed JSON import (`/courses/import-seed`)
+## Dev seed script (`npm run seed`)
+
+Runs `scripts/seed.ts` via tsx. Idempotent -- safe to run repeatedly. Steps:
+
+1. Creates `data/golfshot.db` if it doesn't exist
+2. Runs all migrations via `runMigrations()`
+3. Creates dev user (`dev@golfshot.local` / `password`) if not present
+4. Imports `data/mearns_castle_geometry.json` as a course (matched by name)
+5. Imports `data/bag_profile.json` as an active bag for the dev user (skipped if user already has a bag)
+6. Prints summary of created vs skipped items
+
+## Migration infrastructure
+
+- Migration files live in `src/db/migrations/`, named `001-initial-schema.ts`, `002-whatever.ts`, etc.
+- Each exports `{ up(db): void }`
+- `src/db/migrate.ts` exports `runMigrations(db)` -- creates `schema_version` table, applies pending migrations in order inside a transaction
+- Migrations are registered statically in a registry array (no dynamic filesystem scanning)
+- `initializeDatabase()` in `schema.ts` delegates to `runMigrations()` -- single entrypoint for app startup, tests, and seed script
+
+## Seed JSON files
 
 ### `data/bag_profile.json`
 Player bag with 4 clubs:

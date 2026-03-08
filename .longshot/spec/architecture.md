@@ -27,3 +27,5 @@ Play mode normalizes orientation: tee at bottom, green toward top.
 - **External data**: OpenStreetMap (Nominatim search + Overpass API for hole geometry). ODbL license, no API key required.
 - **Dev tooling**: tsx for dev server, vitest + supertest for testing, nix-shell for environment
 - **Build**: TypeScript compiled to `dist/`, ES modules throughout
+- **Migrations**: Numbered migration files in `src/db/migrations/`, tracked via `schema_version` table, run by `src/db/migrate.ts`
+- **Dev seed**: `npm run seed` (`scripts/seed.ts`) -- idempotent setup of DB, dev user, course, and bag
