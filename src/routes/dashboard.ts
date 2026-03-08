@@ -11,7 +11,7 @@ export function createDashboardRouter(): Router {
 <body>
   <h1>Dashboard</h1>
   <p>Welcome, ${req.session.userEmail}!</p>
-  <p><a href="/courses">Courses</a></p>
+  <p><a href="/courses">Courses</a> | <a href="/bags">My Bags</a></p>
   <form method="POST" action="/logout">
     <button type="submit">Logout</button>
   </form>

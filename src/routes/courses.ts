@@ -430,7 +430,7 @@ function pageHead(title: string): string {
 }
 
 function navBar(): string {
-  return `<nav><a href="/dashboard">Dashboard</a> | <a href="/courses">Courses</a></nav><hr>`;
+  return `<nav><a href="/dashboard">Dashboard</a> | <a href="/courses">Courses</a> | <a href="/bags">My Bags</a></nav><hr>`;
 }
 
 function coursesListPage(courses: CourseWithCount[]): string {

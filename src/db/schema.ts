@@ -39,5 +39,24 @@ export function initializeDatabase(db: Database.Database): void {
     );
 
     CREATE INDEX IF NOT EXISTS idx_holes_course_id ON holes(course_id);
+
+    CREATE TABLE IF NOT EXISTS bags (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL REFERENCES users(id),
+      name TEXT NOT NULL,
+      is_active INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_bags_user_id ON bags(user_id);
+
+    CREATE TABLE IF NOT EXISTS clubs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      bag_id INTEGER NOT NULL REFERENCES bags(id) ON DELETE CASCADE,
+      name TEXT NOT NULL,
+      carry_yards INTEGER NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_clubs_bag_id ON clubs(bag_id);
   `);
 }

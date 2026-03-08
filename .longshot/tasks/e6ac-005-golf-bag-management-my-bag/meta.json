@@ -2,9 +2,11 @@
   "id": "e6ac-5",
   "slug": "golf-bag-management-my-bag",
   "title": "Golf bag management (My Bag)",
-  "status": "drafting",
+  "status": "complete",
   "created": "2026-03-08T10:22:12.552Z",
-  "updated": "2026-03-08T10:22:12.552Z",
+  "updated": "2026-03-08T11:17:25.352Z",
   "dependsOn": [],
-  "parentTaskId": "e6ac-2"
+  "parentTaskId": "e6ac-2",
+  "completed": "2026-03-08T11:17:25.352Z",
+  "checkpoint": "3e4733a046ec71aa6de8ca55bc5eb9f5b7ef6e18"
 }
