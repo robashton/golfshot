@@ -1,0 +1,12 @@
+status.json
+pending-diffs.json
+queue.json
+worktrees/
+profile.json
+active-task
+branches.json
+runs/
+tasks.json
+history.jsonl
+conversation.json
+conversation-*.json
