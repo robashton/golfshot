@@ -34,3 +34,13 @@ Two holes with lat/lng coordinates:
 ## OpenStreetMap import (`/courses/import/search`)
 
 Search-and-import flow for discovering real courses. Searches Nominatim, previews hole data from Overpass API (par, yardage, tee/green coordinates, hazards), and imports into DB. Courses without hole-level mapping in OSM import as name+location only.
+
+### Overpass query strategies
+
+Different OSM element types require different query approaches:
+
+- **Relations**: Uses member-recursion query (`rel(ID) >> members`) to find golf-tagged children. If no golf children found, falls back to radius query from the relation's centroid.
+- **Ways**: Fetches the way geometry, computes its centroid, then uses a radius query around that centroid to find nearby golf features.
+- **Nodes**: Uses a radius query directly from the node's coordinates.
+
+All strategies fall back to radius query using fallback lat/lon coordinates when the primary approach fails or yields no golf elements.

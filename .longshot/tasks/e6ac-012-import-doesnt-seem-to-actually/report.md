@@ -1,22 +1,21 @@
-# Task Report: Fix Overpass import for non-indexed relations
+# Task #e6ac-12: Fix Overpass import for non-indexed relations
 
-## Problem
-`buildAreaQuery` used `map_to_area` which only works for OSM relations in Overpass's area index. Most golf course relations aren't indexed, causing HTTP 400 errors.
+## Summary
 
-## Solution
-Replaced `buildAreaQuery` with a three-strategy approach:
+Replaced the broken `map_to_area`-based Overpass query with type-specific query strategies: member recursion for relations, centroid-based radius queries for ways, and direct radius queries for nodes. Added fallback logic so imports degrade gracefully when golf-tagged children aren't found.
 
-1. **Relations** (`buildRelationQuery`): Uses `rel(ID) >> ->.members; nwr.members["golf"];` to recurse into relation members and find golf-tagged elements directly, avoiding `map_to_area` entirely.
+## Changes
 
-2. **Ways** (`buildWayQuery`): Fetches the way geometry, computes its centroid, then does a radius query around that centroid to find nearby golf features.
+| File | Change |
+|------|--------|
+| `src/osm/overpass.ts` | Replaced `buildAreaQuery()` with `buildRelationQuery()` (member recursion) and `buildWayQuery()` (fetch geometry). Added `queryOverpass()`, `findCentroidFromElements()`, `hasGolfElements()` helpers. Rewrote `fetchCourseData()` with three-branch strategy (relation/way/node) and fallback logic. |
+| `tests/osm.test.ts` | Updated test mocks to match new two-step query flow for ways (fetch geometry then radius query). Added comments clarifying mock setup. |
 
-3. **Nodes**: Unchanged -- still uses radius query with provided coordinates.
+## Diff from plan
 
-**Fallback logic**: If a relation query returns no `golf=hole` elements, falls back to a radius query around the relation's centroid. If the way/relation query itself fails, falls back to radius query using provided lat/lon coordinates.
+- The task spec suggested using `map_to_area` inside the relation query as a first attempt -- the implementation skipped this entirely and went straight to the member-recursion approach (`rel(ID) >> members`), which is the correct fix since `map_to_area` is the root cause of the failure.
+- No other scope changes. All acceptance criteria met.
 
-## Files changed
-- `src/osm/overpass.ts` -- Replaced `buildAreaQuery` with `buildRelationQuery` + `buildWayQuery`, extracted `queryOverpass` helper, added `findCentroidFromElements` and `hasGolfElements` helpers, rewrote `fetchCourseData` with three-strategy approach and fallback logic.
-- `tests/osm.test.ts` -- Updated way import test to mock two sequential fetch calls (way geometry + radius query).
+## Commits
 
-## Test results
-All 88 tests pass. Build is clean (no TypeScript errors).
+- `cec7cec` -- agent work: Fixed Overpass import: replaced map_to_area with relation member recursion for relations and centroid-based radius queries for ways, with fallback logic
