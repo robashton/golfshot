@@ -8,3 +8,4 @@ data/*.db-shm
 
 # longshot transient state
 CLAUDE.md
+data/golfshot.log
