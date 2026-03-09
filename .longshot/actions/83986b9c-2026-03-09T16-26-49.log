@@ -1,0 +1,16 @@
+
+up to date, audited 251 packages in 1s
+
+45 packages are looking for funding
+  run `npm fund` for details
+
+8 vulnerabilities (5 moderate, 3 high)
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force
+
+Run `npm audit` for details.
+
+> golfshot@0.1.0 build
+> tsc
+
