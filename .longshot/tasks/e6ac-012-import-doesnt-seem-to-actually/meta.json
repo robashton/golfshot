@@ -1,9 +1,9 @@
 {
   "id": "e6ac-12",
   "slug": "import-doesnt-seem-to-actually",
-  "title": "Fix: Overpass import fails with map_to_area on non-indexed relations",
-  "status": "drafting",
+  "title": "Import doesn't seem to actually work?",
+  "status": "in_progress",
   "created": "2026-03-09T16:29:48.568Z",
-  "updated": "2026-03-09T16:31:08.271Z",
+  "updated": "2026-03-09T16:31:40.720Z",
   "dependsOn": []
 }
