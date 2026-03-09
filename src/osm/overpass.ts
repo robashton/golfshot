@@ -1,3 +1,5 @@
+import { logger } from "../logger.js";
+
 export interface ParsedHole {
   number: number;
   par: number;
@@ -257,6 +259,7 @@ export async function fetchCourseData(
   });
 
   if (!res.ok) {
+    logger.error(`Overpass query failed: HTTP ${res.status}`, `osm_type=${osmType} osm_id=${osmId}\n${query}`);
     throw new Error(`Overpass query failed: ${res.status}`);
   }
 

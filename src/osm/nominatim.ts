@@ -1,3 +1,5 @@
+import { logger } from "../logger.js";
+
 export interface NominatimResult {
   osm_type: string;
   osm_id: number;
@@ -25,6 +27,7 @@ export async function searchGolfCourses(query: string): Promise<NominatimResult[
   });
 
   if (!res.ok) {
+    logger.error(`Nominatim search failed: HTTP ${res.status}`, `query="${query}" url=${url.toString()}`);
     throw new Error(`Nominatim search failed: ${res.status}`);
   }
 

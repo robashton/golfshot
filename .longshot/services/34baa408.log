@@ -15,3 +15,32 @@
 [2026-03-08T12:12:44.637Z] [1G
 [2026-03-08T12:12:44.637Z] [0K
 [2026-03-08T12:12:44.878Z] Golfshot server listening on http://localhost:8085
+[2026-03-09T09:44:21.229Z] Started: npx tsx scripts/seed.ts && PORT=8085 npx tsx src/index.ts (pid: 79404)
+[2026-03-09T09:44:21.237Z] ^D
+[2026-03-09T09:44:21.431Z] [1G
+[2026-03-09T09:44:21.431Z] [0K
+[2026-03-09T09:44:21.633Z] 
+[2026-03-09T09:44:21.633Z] Seed complete:
+[2026-03-09T09:44:21.633Z] 
+[2026-03-09T09:44:21.634Z]   Migrations: applied
+[2026-03-09T09:44:21.634Z]   User dev@golfshot.local: already exists (id=1)
+[2026-03-09T09:44:21.634Z]   Course "Mearns Castle Golf Academy": already exists (id=1)
+[2026-03-09T09:44:21.634Z]   Bag for dev user: already exists (id=1)
+[2026-03-09T09:44:21.634Z] 
+[2026-03-09T09:44:21.640Z] [1G[0K⠙
+[2026-03-09T09:44:21.641Z] [1G[0K
+[2026-03-09T09:44:21.792Z] [1G
+[2026-03-09T09:44:21.792Z] [0K
+[2026-03-09T09:44:22.038Z] Golfshot server listening on http://localhost:8085
+[2026-03-09T09:47:34.121Z] Error: Overpass query failed: 400
+[2026-03-09T09:47:34.121Z]     at fetchCourseData (/Users/robashton/src/golfshot/src/osm/overpass.ts:260:11)
+[2026-03-09T09:47:34.121Z]     at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+[2026-03-09T09:47:34.121Z]     at async <anonymous> (/Users/robashton/src/golfshot/src/routes/courses.ts:190:22)
+[2026-03-09T09:47:43.445Z] Error: Overpass query failed: 504
+[2026-03-09T09:47:43.445Z]     at fetchCourseData (/Users/robashton/src/golfshot/src/osm/overpass.ts:260:11)
+[2026-03-09T09:47:43.445Z]     at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+[2026-03-09T09:47:43.445Z]     at async <anonymous> (/Users/robashton/src/golfshot/src/routes/courses.ts:190:22)
+[2026-03-09T09:47:49.584Z] Error: Overpass query failed: 400
+[2026-03-09T09:47:49.584Z]     at fetchCourseData (/Users/robashton/src/golfshot/src/osm/overpass.ts:260:11)
+[2026-03-09T09:47:49.584Z]     at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+[2026-03-09T09:47:49.584Z]     at async <anonymous> (/Users/robashton/src/golfshot/src/routes/courses.ts:190:22)

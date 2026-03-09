@@ -6,6 +6,7 @@ import { fetchCourseData } from "../osm/overpass.js";
 import type { NominatimResult } from "../osm/nominatim.js";
 import type { ParsedCourse } from "../osm/overpass.js";
 import { layout, escapeHtml } from "../layout.js";
+import { logger } from "../logger.js";
 
 interface CourseRow {
   id: number;
@@ -159,9 +160,12 @@ export function createCoursesRouter(db: Database.Database): Router {
     }
 
     try {
+      logger.info(`Import search: query="${q}"`);
       const results = await searchGolfCourses(q);
+      logger.info(`Import search: ${results.length} results for "${q}"`);
       res.send(searchResultsPage(q, results));
     } catch (err) {
+      logger.error(`Import search failed: query="${q}"`, err instanceof Error ? err.stack : String(err));
       next(err);
     }
   });
@@ -187,6 +191,7 @@ export function createCoursesRouter(db: Database.Database): Router {
     }
 
     try {
+      logger.info(`Import preview: osm_type=${osmType} osm_id=${osmId}`);
       const course = await fetchCourseData(
         osmType,
         osmId,
@@ -195,8 +200,10 @@ export function createCoursesRouter(db: Database.Database): Router {
         lat ? parseFloat(lat) : undefined,
         lon ? parseFloat(lon) : undefined
       );
+      logger.info(`Import preview: "${course.name}" — ${course.holes.length} holes`);
       res.send(previewPage(course, osmType, osmId, lat, lon));
     } catch (err) {
+      logger.error(`Import preview failed: osm_type=${osmType} osm_id=${osmId}`, err instanceof Error ? err.stack : String(err));
       next(err);
     }
   });
@@ -217,6 +224,7 @@ export function createCoursesRouter(db: Database.Database): Router {
     }
 
     try {
+      logger.info(`Import OSM: osm_type=${osm_type} osm_id=${osmId}`);
       const course = await fetchCourseData(
         osm_type,
         osmId,
@@ -256,8 +264,10 @@ export function createCoursesRouter(db: Database.Database): Router {
       });
 
       const courseId = importAll();
+      logger.info(`Import OSM: created course #${courseId} "${course.name}" with ${course.holes.length} holes`);
       res.redirect(`/courses/${courseId}`);
     } catch (err) {
+      logger.error(`Import OSM failed: osm_type=${osm_type} osm_id=${osmId}`, err instanceof Error ? err.stack : String(err));
       next(err);
     }
   });

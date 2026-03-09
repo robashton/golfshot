@@ -34,3 +34,4 @@ Play mode normalizes orientation: tee at bottom, green toward top.
 - **Build**: TypeScript compiled to `dist/`, ES modules throughout
 - **Migrations**: Numbered migration files in `src/db/migrations/`, tracked via `schema_version` table, run by `src/db/migrate.ts`
 - **Dev seed**: `npm run seed` (`scripts/seed.ts`) -- idempotent setup of DB, dev user, course, and bag
+- **Logging**: File-based logger (`src/logger.ts`) appends to `data/golfshot.log`. Levels: info/warn/error. Also writes to console. Express error-handling middleware in `src/app.ts` catches unhandled errors, logs them, and renders a user-friendly error page. Import routes and OSM API calls log parameters and outcomes for diagnostics.

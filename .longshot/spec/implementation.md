@@ -35,7 +35,9 @@ public/
   map-editor.css                    -- map editor styling (toolbar, markers, status bar)
 src/
   index.ts                          -- server entry point (port 3000)
-  app.ts                            -- Express app setup, static file serving, exported for testing
+  app.ts                            -- Express app setup, static file serving, error-handling middleware, exported for testing
+  logger.ts                         -- file-based logger (appends to data/golfshot.log, also writes to console)
+  layout.ts                         -- shared HTML layout wrapper (head, nav, main container, extraHead injection)
   layout.ts                         -- shared HTML layout wrapper (head, nav, main container, extraHead injection)
   db/
     schema.ts                       -- initializeDatabase() delegates to runMigrations()
@@ -65,6 +67,8 @@ tests/
   strategies.test.ts                -- strategy CRUD tests (21 tests)
   osm.test.ts                       -- OSM parsing + import route tests (9 tests)
 data/
+  golfshot.db                       -- SQLite database
+  golfshot.log                      -- application log (created on first write, appended to)
   bag_profile.json                  -- player bag profile
   mearns_castle_geometry.json       -- seed hole geometry (Mearns holes 1 & 7)
 ```
