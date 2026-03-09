@@ -37,23 +37,18 @@ interface OverpassResponse {
 
 const OVERPASS_URL = "https://overpass-api.de/api/interpreter";
 
-function buildAreaQuery(osmType: string, osmId: number): string {
-  const typeMap: Record<string, string> = {
-    way: "way",
-    relation: "rel",
-    node: "node",
-  };
-  const overpassType = typeMap[osmType] ?? osmType;
-
+function buildRelationQuery(osmId: number): string {
   return `[out:json][timeout:30];
-(
-  ${overpassType}(${osmId});
-)->.course;
-.course map_to_area ->.courseArea;
-(
-  nwr["golf"](area.courseArea);
-);
-(.course; _; );
+rel(${osmId})->.course;
+.course out geom;
+.course >> ->.members;
+nwr.members["golf"];
+out geom;`;
+}
+
+function buildWayQuery(osmId: number): string {
+  return `[out:json][timeout:30];
+way(${osmId});
 out geom;`;
 }
 
@@ -238,6 +233,32 @@ export function parseOverpassResponse(
   return { name, location: fallbackLocation, holes };
 }
 
+async function queryOverpass(query: string): Promise<OverpassResponse> {
+  const res = await fetch(OVERPASS_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: `data=${encodeURIComponent(query)}`,
+  });
+
+  if (!res.ok) {
+    throw new Error(`Overpass query failed: ${res.status}`);
+  }
+
+  return (await res.json()) as OverpassResponse;
+}
+
+function findCentroidFromElements(elements: OverpassElement[]): { lat: number; lng: number } | undefined {
+  for (const el of elements) {
+    const c = elementCentroid(el);
+    if (c) return c;
+  }
+  return undefined;
+}
+
+function hasGolfElements(data: OverpassResponse): boolean {
+  return data.elements.some((el) => el.tags?.golf === "hole");
+}
+
 export async function fetchCourseData(
   osmType: string,
   osmId: number,
@@ -246,23 +267,59 @@ export async function fetchCourseData(
   fallbackLat?: number,
   fallbackLon?: number
 ): Promise<ParsedCourse> {
-  const isNode = osmType === "node";
-  const query =
-    isNode && fallbackLat != null && fallbackLon != null
-      ? buildRadiusQuery(fallbackLat, fallbackLon)
-      : buildAreaQuery(osmType, osmId);
-
-  const res = await fetch(OVERPASS_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: `data=${encodeURIComponent(query)}`,
-  });
-
-  if (!res.ok) {
-    logger.error(`Overpass query failed: HTTP ${res.status}`, `osm_type=${osmType} osm_id=${osmId}\n${query}`);
-    throw new Error(`Overpass query failed: ${res.status}`);
+  // Nodes: always use radius query
+  if (osmType === "node" && fallbackLat != null && fallbackLon != null) {
+    const query = buildRadiusQuery(fallbackLat, fallbackLon);
+    const data = await queryOverpass(query);
+    return parseOverpassResponse(data, fallbackName, fallbackLocation);
   }
 
-  const data = (await res.json()) as OverpassResponse;
-  return parseOverpassResponse(data, fallbackName, fallbackLocation);
+  // Relations: recurse into members to find golf elements
+  if (osmType === "relation") {
+    const query = buildRelationQuery(osmId);
+    try {
+      const data = await queryOverpass(query);
+      if (hasGolfElements(data)) {
+        return parseOverpassResponse(data, fallbackName, fallbackLocation);
+      }
+      // No golf children — fall back to radius query from relation centroid
+      logger.info(`Relation ${osmId} has no golf children, falling back to radius query`);
+      const center = findCentroidFromElements(data.elements) ??
+        (fallbackLat != null && fallbackLon != null ? { lat: fallbackLat, lng: fallbackLon } : undefined);
+      if (center) {
+        const radiusData = await queryOverpass(buildRadiusQuery(center.lat, center.lng));
+        return parseOverpassResponse(radiusData, fallbackName, fallbackLocation);
+      }
+    } catch (err) {
+      logger.error(`Relation query failed for ${osmId}, falling back to radius`, err instanceof Error ? err.message : String(err));
+      if (fallbackLat != null && fallbackLon != null) {
+        const radiusData = await queryOverpass(buildRadiusQuery(fallbackLat, fallbackLon));
+        return parseOverpassResponse(radiusData, fallbackName, fallbackLocation);
+      }
+    }
+    throw new Error(`Could not fetch course data for relation/${osmId}`);
+  }
+
+  // Ways: fetch the way geometry, then use radius query from its centroid
+  if (osmType === "way") {
+    const wayQuery = buildWayQuery(osmId);
+    try {
+      const wayData = await queryOverpass(wayQuery);
+      const center = findCentroidFromElements(wayData.elements);
+      if (center) {
+        const radiusData = await queryOverpass(buildRadiusQuery(center.lat, center.lng));
+        return parseOverpassResponse(radiusData, fallbackName, fallbackLocation);
+      }
+    } catch (err) {
+      logger.error(`Way query failed for ${osmId}, falling back`, err instanceof Error ? err.message : String(err));
+    }
+    // Fall back to provided coordinates
+    if (fallbackLat != null && fallbackLon != null) {
+      const radiusData = await queryOverpass(buildRadiusQuery(fallbackLat, fallbackLon));
+      return parseOverpassResponse(radiusData, fallbackName, fallbackLocation);
+    }
+    throw new Error(`Could not fetch course data for way/${osmId}`);
+  }
+
+  throw new Error(`Unsupported OSM type: ${osmType}`);
 }

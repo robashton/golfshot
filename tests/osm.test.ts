@@ -254,6 +254,7 @@ describe("OSM import route", () => {
       ],
     };
 
+    // Relation query returns golf children directly
     vi.spyOn(globalThis, "fetch").mockResolvedValue(
       new Response(JSON.stringify(overpassResponse), {
         status: 200,
@@ -305,7 +306,22 @@ describe("OSM import route", () => {
   });
 
   it("imports course with no holes when Overpass returns none", async () => {
-    const overpassResponse = {
+    // Way query returns the way geometry, then radius query returns course with no holes
+    const wayResponse = {
+      elements: [
+        {
+          type: "way",
+          id: 999,
+          tags: { leisure: "golf_course", name: "Minimal Course" },
+          geometry: [
+            { lat: 51.5, lon: -0.1 },
+            { lat: 51.51, lon: -0.11 },
+          ],
+        },
+      ],
+    };
+
+    const radiusResponse = {
       elements: [
         {
           type: "way",
@@ -316,12 +332,20 @@ describe("OSM import route", () => {
       ],
     };
 
-    vi.spyOn(globalThis, "fetch").mockResolvedValue(
-      new Response(JSON.stringify(overpassResponse), {
-        status: 200,
-        headers: { "Content-Type": "application/json" },
-      })
-    );
+    const fetchSpy = vi.spyOn(globalThis, "fetch");
+    fetchSpy
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify(wayResponse), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        })
+      )
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify(radiusResponse), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        })
+      );
 
     const { login } = authedAgent(ctx);
     const agent = await login();

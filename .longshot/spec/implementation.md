@@ -55,7 +55,7 @@ src/
     strategies.ts                   -- strategy CRUD with shots, per-hole planning
   osm/
     nominatim.ts                    -- Nominatim search wrapper (golf course search)
-    overpass.ts                     -- Overpass query builder + response parser (hole geometry extraction)
+    overpass.ts                     -- Overpass query builder + response parser. Relations use member-recursion query; ways use centroid-based radius query; nodes use radius query. Fallback to radius query when no golf children found.
 tests/
   helpers.ts                        -- test context with in-memory DB
   schema.test.ts                    -- database schema tests (4 tests)
