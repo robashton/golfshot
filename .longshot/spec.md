@@ -5,9 +5,8 @@ A golf course strategy-card generator. Capture hole geometry on a satellite base
 ## Product concept
 
 Two distinct modes:
-
-1. **Edit mode** -- satellite basemap with click/drag capture for tee, green, hazards, layups, and fairway structure. Outputs JSON geometry.
-2. **Play mode** -- clean simplified overhead rendering with projected dispersion ellipses, stock route, and strategy notes. Optimized for print.
+1. **Edit mode** -- Leaflet satellite basemap (ESRI World Imagery) with interactive toolbar for placing tee, green, hazard, layup markers and fairway outline points. Drag to reposition, right-click to rename/delete. Syncs to hidden form fields for server-side persistence. Implemented as `public/map-editor.js`.
+2. **Play mode** -- clean simplified overhead rendering with projected dispersion ellipses, stock route, and strategy notes. Optimized for print. *(not yet built)*
 
 The satellite editor is the authoring tool; the printable strategy cards are the real product.
 

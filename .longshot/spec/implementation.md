@@ -7,10 +7,9 @@
 4. ~~Hole strategy planner~~ (**done** -- strategy CRUD with shots, clubs from bag, carry distances, no-go zones, 21 tests)
 5. ~~Public-data bootstrap~~ (**done** -- OSM search via Nominatim, course preview via Overpass, import with hole geometry, 9 tests)
 6. ~~Dev seed script + migrations~~ (**done** -- numbered migration system, idempotent seed script with dev user/course/bag)
-7. ~~Golf-themed styling + shared layout~~ (**done** -- CSS file, layout helper, responsive mobile-first design, all 26 pages updated)
-8. Edit mode (satellite basemap, marker capture, JSON save/load)
-9. Dispersion ellipses (projected shot ellipses aligned to hole direction)
-10. Printable export (pocket cards, booklet pages, print CSS)
+7. ~~Edit mode (satellite basemap, marker capture, JSON save/load)~~ (**done** -- Leaflet map editor with satellite tiles, toolbar mode switching, drag markers, fairway polyline, hidden form field sync)
+8. Dispersion ellipses (projected shot ellipses aligned to hole direction)
+9. Printable export (pocket cards, booklet pages, print CSS)
 
 ## Test suite
 88 tests total (vitest + supertest):
@@ -24,7 +23,6 @@
 - OSM integration tests (9)
 ## File structure
 shell.nix                           -- nix dev environment (node, sqlite)
-shell.nix                           -- nix dev environment (node, sqlite)
 package.json                        -- dependencies and scripts
 vitest.config.ts                    -- test runner config
 tsconfig.json                       -- TypeScript config
@@ -32,11 +30,13 @@ CLAUDE.md                           -- dev guide and conventions
 scripts/
   seed.ts                           -- idempotent dev seed script (npm run seed)
 public/
-  styles.css                        -- golf-themed CSS (colour palette, responsive layout, component styles)
+  styles.css                        -- golf-themed global styles (layout, forms, cards, responsive)
+  map-editor.js                     -- Leaflet-based satellite map editor (vanilla JS, no build step)
+  map-editor.css                    -- map editor styling (toolbar, markers, status bar)
 src/
   index.ts                          -- server entry point (port 3000)
-  app.ts                            -- Express app setup (static serving + exported for testing)
-  layout.ts                         -- shared HTML layout wrapper (nav, head, container)
+  app.ts                            -- Express app setup, static file serving, exported for testing
+  layout.ts                         -- shared HTML layout wrapper (head, nav, main container, extraHead injection)
   db/
     schema.ts                       -- initializeDatabase() delegates to runMigrations()
     migrate.ts                      -- migration runner (schema_version tracking, applies pending migrations)
@@ -48,7 +48,7 @@ src/
   routes/
     auth.ts                         -- register, login, logout endpoints + HTML forms
     dashboard.ts                    -- protected dashboard page
-    courses.ts                      -- course + hole CRUD, seed import, OSM search/preview/import
+    courses.ts                      -- course + hole CRUD, map editor integration, seed import, OSM search/preview/import
     bags.ts                         -- bag + club CRUD, set active, seed import
     strategies.ts                   -- strategy CRUD with shots, per-hole planning
   osm/

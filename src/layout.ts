@@ -6,7 +6,10 @@ export function escapeHtml(str: string): string {
     .replace(/"/g, "&quot;");
 }
 
-export function layout(title: string, body: string, nav = true): string {
+export function layout(title: string, body: string, opts?: boolean | { nav?: boolean; extraHead?: string }): string {
+  const resolved = typeof opts === "boolean" ? { nav: opts } : (opts ?? {});
+  const showNav = resolved.nav ?? true;
+  const extraHead = resolved.extraHead ?? "";
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -14,9 +17,10 @@ export function layout(title: string, body: string, nav = true): string {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${escapeHtml(title)} - Golfshot</title>
   <link rel="stylesheet" href="/styles.css">
+  ${extraHead}
 </head>
 <body>
-  ${nav ? navBar() : ""}
+  ${showNav ? navBar() : ""}
   <main class="container">
     ${body}
   </main>

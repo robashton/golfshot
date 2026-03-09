@@ -21,8 +21,8 @@ Session middleware: cookie-based via express-session with custom `SqliteSessionS
 - `GET /courses/:id` -- view course details and all holes
 - `GET /courses/:id/edit` + `POST /courses/:id` -- update name and location
 - `POST /courses/:id/delete` -- cascading delete of course and all holes
-- `GET /courses/:id/holes/new` + `POST /courses/:id/holes` -- add hole (number, par, yardage, tee/green coords, hazards, layups)
-- `GET /courses/:courseId/holes/:holeId/edit` + `POST /courses/:courseId/holes/:holeId` -- update all hole fields
+- `GET /courses/:id/holes/new` + `POST /courses/:id/holes` -- add hole (number, par, yardage, geometry via map editor). Map editor writes hidden fields: tee_lat/lng, green_lat/lng, hazard_{name,lat,lng}_N, layup_{name,lat,lng}_N, fairway_{lat,lng}_N.
+- `GET /courses/:courseId/holes/:holeId/edit` + `POST /courses/:courseId/holes/:holeId` -- update all hole fields. Map editor pre-loads existing geometry.
 - `POST /courses/:courseId/holes/:holeId/delete` -- delete hole
 - `GET /courses/import` -- import page with OSM search form and seed JSON textarea
 - `POST /courses/import-seed` -- imports `mearns_castle_geometry.json` format. Parses tee/green/layup coords and unknown coordinate pairs as hazards.

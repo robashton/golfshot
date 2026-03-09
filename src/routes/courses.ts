@@ -528,8 +528,25 @@ function buildGeometryFromBody(body: Record<string, string | undefined>): HoleGe
   }
   if (layups.length > 0) geometry.layups = layups;
 
+  // Parse fairway points (fairway_lat_0, fairway_lng_0, ...)
+  const fairwayPoints: Array<{ lat: number; lng: number }> = [];
+  for (let i = 0; i < 50; i++) {
+    const lat = parseFloat(body[`fairway_lat_${i}`] ?? "");
+    const lng = parseFloat(body[`fairway_lng_${i}`] ?? "");
+    if (!isNaN(lat) && !isNaN(lng)) {
+      fairwayPoints.push({ lat, lng });
+    }
+  }
+  if (fairwayPoints.length > 0) geometry.fairway_points = fairwayPoints;
+
   return geometry;
 }
+
+const LEAFLET_HEAD = `<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+<link rel="stylesheet" href="/map-editor.css">
+<script src="/map-editor.js" defer></script>`;
+
 
 function coursesListPage(courses: CourseWithCount[]): string {
   const rows = courses
@@ -648,7 +665,7 @@ function newHolePage(course: CourseRow, error?: string): string {
   const body = `<h1>Add Hole to ${escapeHtml(course.name)}</h1>
   ${error ? `<div class="error">${escapeHtml(error)}</div>` : ""}
   <div class="card">
-    <form method="POST" action="/courses/${course.id}/holes">
+    <form id="hole-form" method="POST" action="/courses/${course.id}/holes">
       <div class="form-group">
         <label for="hole_number">Hole Number</label>
         <input type="number" id="hole_number" name="hole_number" required min="1">
@@ -663,150 +680,32 @@ function newHolePage(course: CourseRow, error?: string): string {
           <input type="number" id="yardage" name="yardage" required min="1">
         </div>
       </div>
-      <h3>Tee</h3>
-      <div class="coord-row">
-        <div class="form-group">
-          <label for="tee_lat">Lat</label>
-          <input type="text" id="tee_lat" name="tee_lat">
-        </div>
-        <div class="form-group">
-          <label for="tee_lng">Lng</label>
-          <input type="text" id="tee_lng" name="tee_lng">
-        </div>
-      </div>
-      <h3>Green</h3>
-      <div class="coord-row">
-        <div class="form-group">
-          <label for="green_lat">Lat</label>
-          <input type="text" id="green_lat" name="green_lat">
-        </div>
-        <div class="form-group">
-          <label for="green_lng">Lng</label>
-          <input type="text" id="green_lng" name="green_lng">
-        </div>
-      </div>
-      <h3>Hazards</h3>
-      <div class="form-group">
-        <label>Name</label>
-        <input type="text" name="hazard_name_0">
-      </div>
-      <div class="coord-row">
-        <div class="form-group">
-          <label>Lat</label>
-          <input type="text" name="hazard_lat_0">
-        </div>
-        <div class="form-group">
-          <label>Lng</label>
-          <input type="text" name="hazard_lng_0">
-        </div>
-      </div>
-      <h3>Layups</h3>
-      <div class="form-group">
-        <label>Name</label>
-        <input type="text" name="layup_name_0">
-      </div>
-      <div class="coord-row">
-        <div class="form-group">
-          <label>Lat</label>
-          <input type="text" name="layup_lat_0">
-        </div>
-        <div class="form-group">
-          <label>Lng</label>
-          <input type="text" name="layup_lng_0">
-        </div>
-      </div>
+      <h3>Geometry</h3>
+      <div id="map-editor-container"></div>
       <div class="form-actions">
         <button type="submit">Add Hole</button>
       </div>
     </form>
   </div>
-  <p><a href="/courses/${course.id}">Back to course</a></p>`;
-  return layout("New Hole", body);
+  <p><a href="/courses/${course.id}">Back to course</a></p>
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      MapEditor.init(
+        document.getElementById("map-editor-container"),
+        document.getElementById("hole-form")
+      );
+    });
+  </script>`;
+  return layout("New Hole", body, { extraHead: LEAFLET_HEAD });
 }
 
 function editHolePage(course: CourseRow, hole: HoleRow, error?: string): string {
   const geo = JSON.parse(hole.geometry) as HoleGeometry;
 
-  const hazardFields = (geo.hazards ?? [])
-    .map(
-      (h, i) => `<div class="shot-block">
-        <div class="form-group">
-          <label>Name</label>
-          <input type="text" name="hazard_name_${i}" value="${escapeHtml(h.name)}">
-        </div>
-        <div class="coord-row">
-          <div class="form-group">
-            <label>Lat</label>
-            <input type="text" name="hazard_lat_${i}" value="${h.lat}">
-          </div>
-          <div class="form-group">
-            <label>Lng</label>
-            <input type="text" name="hazard_lng_${i}" value="${h.lng}">
-          </div>
-        </div>
-      </div>`
-    )
-    .join("");
-
-  const layupFields = (geo.layups ?? [])
-    .map(
-      (l, i) => `<div class="shot-block">
-        <div class="form-group">
-          <label>Name</label>
-          <input type="text" name="layup_name_${i}" value="${escapeHtml(l.name)}">
-        </div>
-        <div class="coord-row">
-          <div class="form-group">
-            <label>Lat</label>
-            <input type="text" name="layup_lat_${i}" value="${l.lat}">
-          </div>
-          <div class="form-group">
-            <label>Lng</label>
-            <input type="text" name="layup_lng_${i}" value="${l.lng}">
-          </div>
-        </div>
-      </div>`
-    )
-    .join("");
-
-  const hazardSection = hazardFields || `<div class="shot-block">
-    <div class="form-group">
-      <label>Name</label>
-      <input type="text" name="hazard_name_0">
-    </div>
-    <div class="coord-row">
-      <div class="form-group">
-        <label>Lat</label>
-        <input type="text" name="hazard_lat_0">
-      </div>
-      <div class="form-group">
-        <label>Lng</label>
-        <input type="text" name="hazard_lng_0">
-      </div>
-    </div>
-  </div>`;
-
-  const layupSection = layupFields || `<div class="shot-block">
-    <div class="form-group">
-      <label>Name</label>
-      <input type="text" name="layup_name_0">
-    </div>
-    <div class="coord-row">
-      <div class="form-group">
-        <label>Lat</label>
-        <input type="text" name="layup_lat_0">
-      </div>
-      <div class="form-group">
-        <label>Lng</label>
-        <input type="text" name="layup_lng_0">
-      </div>
-    </div>
-  </div>`;
-
   const body = `<h1>Edit Hole ${hole.hole_number} - ${escapeHtml(course.name)}</h1>
   ${error ? `<div class="error">${escapeHtml(error)}</div>` : ""}
   <div class="card">
-    <form method="POST" action="/courses/${course.id}/holes/${hole.id}">
+    <form id="hole-form" method="POST" action="/courses/${course.id}/holes/${hole.id}">
       <div class="form-group">
         <label for="hole_number">Hole Number</label>
         <input type="number" id="hole_number" name="hole_number" required min="1" value="${hole.hole_number}">
@@ -821,39 +720,24 @@ function editHolePage(course: CourseRow, hole: HoleRow, error?: string): string 
           <input type="number" id="yardage" name="yardage" required min="1" value="${hole.yardage}">
         </div>
       </div>
-      <h3>Tee</h3>
-      <div class="coord-row">
-        <div class="form-group">
-          <label>Lat</label>
-          <input type="text" name="tee_lat" value="${geo.tee?.lat ?? ""}">
-        </div>
-        <div class="form-group">
-          <label>Lng</label>
-          <input type="text" name="tee_lng" value="${geo.tee?.lng ?? ""}">
-        </div>
-      </div>
-      <h3>Green</h3>
-      <div class="coord-row">
-        <div class="form-group">
-          <label>Lat</label>
-          <input type="text" name="green_lat" value="${geo.green?.lat ?? ""}">
-        </div>
-        <div class="form-group">
-          <label>Lng</label>
-          <input type="text" name="green_lng" value="${geo.green?.lng ?? ""}">
-        </div>
-      </div>
-      <h3>Hazards</h3>
-      ${hazardSection}
-      <h3>Layups</h3>
-      ${layupSection}
+      <h3>Geometry</h3>
+      <div id="map-editor-container"></div>
       <div class="form-actions">
         <button type="submit">Save Hole</button>
       </div>
     </form>
   </div>
-  <p><a href="/courses/${course.id}">Back to course</a></p>`;
-  return layout("Edit Hole", body);
+  <p><a href="/courses/${course.id}">Back to course</a></p>
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      MapEditor.init(
+        document.getElementById("map-editor-container"),
+        document.getElementById("hole-form"),
+        ${JSON.stringify(geo)}
+      );
+    });
+  </script>`;
+  return layout("Edit Hole", body, { extraHead: LEAFLET_HEAD });
 }
 
 function importPage(error?: string): string {
