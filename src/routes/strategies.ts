@@ -1,6 +1,7 @@
 import { Router } from "express";
 import type Database from "better-sqlite3";
 import { requireAuth } from "../middleware/auth-guard.js";
+import { layout, escapeHtml } from "../layout.js";
 
 interface StrategyRow {
   id: number;
@@ -459,25 +460,6 @@ export function createStrategiesRouter(db: Database.Database): Router {
   return router;
 }
 
-function escapeHtml(str: string): string {
-  return str
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
-
-function pageHead(title: string): string {
-  return `<!DOCTYPE html>
-<html lang="en">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>${escapeHtml(title)} - Golfshot</title></head>
-<body>`;
-}
-
-function navBar(): string {
-  return `<nav><a href="/dashboard">Dashboard</a> | <a href="/courses">Courses</a> | <a href="/bags">My Bags</a></nav><hr>`;
-}
-
 function strategiesListPage(
   course: CourseRow,
   hole: HoleRow,
@@ -494,30 +476,28 @@ function strategiesListPage(
     )
     .join("");
 
-  return `${pageHead(`Strategies - Hole ${hole.hole_number}`)}
-  ${navBar()}
-  <h1>Strategies for Hole ${hole.hole_number} - ${escapeHtml(course.name)}</h1>
+  const body = `<h1>Strategies for Hole ${hole.hole_number} - ${escapeHtml(course.name)}</h1>
   <p>Par ${hole.par} | ${hole.yardage} yards</p>
-  <p><a href="/courses/${course.id}/holes/${hole.id}/strategies/new">New strategy</a></p>
+  <div class="actions">
+    <a href="/courses/${course.id}/holes/${hole.id}/strategies/new" class="btn">New strategy</a>
+  </div>
   ${
     strategies.length === 0
-      ? "<p>No strategies yet.</p>"
-      : `<table>
+      ? `<p class="empty">No strategies yet.</p>`
+      : `<div class="table-wrap"><table>
           <thead><tr><th>Name</th><th>Bag</th><th>Created</th></tr></thead>
           <tbody>${rows}</tbody>
-        </table>`
+        </table></div>`
   }
-  <p><a href="/courses/${course.id}">Back to course</a></p>
-</body></html>`;
+  <p><a href="/courses/${course.id}">Back to course</a></p>`;
+  return layout(`Strategies - Hole ${hole.hole_number}`, body);
 }
 
 function noBagPage(course: CourseRow, hole: HoleRow): string {
-  return `${pageHead("No Active Bag")}
-  ${navBar()}
-  <h1>No Active Bag</h1>
+  const body = `<h1>No Active Bag</h1>
   <p>You need an active bag to create a strategy. <a href="/bags">Set up a bag</a> first.</p>
-  <p><a href="/courses/${course.id}/holes/${hole.id}/strategies">Back to strategies</a></p>
-</body></html>`;
+  <p><a href="/courses/${course.id}/holes/${hole.id}/strategies">Back to strategies</a></p>`;
+  return layout("No Active Bag", body);
 }
 
 function newStrategyPage(
@@ -533,34 +513,65 @@ function newStrategyPage(
 
   const shotRows: string[] = [];
   for (let i = 0; i < 5; i++) {
-    shotRows.push(`<div>
+    shotRows.push(`<div class="shot-block">
       <h4>Shot ${i + 1}</h4>
-      <label>Club: <select name="shot_club_${i}"><option value="">--</option>${clubOptions}</select></label>
-      <label>Target Lat: <input type="text" name="shot_target_lat_${i}"></label>
-      <label>Target Lng: <input type="text" name="shot_target_lng_${i}"></label><br>
-      <label>Notes: <input type="text" name="shot_notes_${i}"></label>
+      <div class="form-group">
+        <label>Club</label>
+        <select name="shot_club_${i}"><option value="">--</option>${clubOptions}</select>
+      </div>
+      <div class="coord-row">
+        <div class="form-group">
+          <label>Target Lat</label>
+          <input type="text" name="shot_target_lat_${i}">
+        </div>
+        <div class="form-group">
+          <label>Target Lng</label>
+          <input type="text" name="shot_target_lng_${i}">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Notes</label>
+        <input type="text" name="shot_notes_${i}">
+      </div>
     </div>`);
   }
 
-  return `${pageHead("New Strategy")}
-  ${navBar()}
-  <h1>New Strategy - Hole ${hole.hole_number} (${escapeHtml(course.name)})</h1>
+  const body = `<h1>New Strategy - Hole ${hole.hole_number} (${escapeHtml(course.name)})</h1>
   <p>Par ${hole.par} | ${hole.yardage} yards | Using: ${escapeHtml(bag.name)}</p>
-  ${error ? `<p style="color:red">${escapeHtml(error)}</p>` : ""}
-  <form method="POST" action="/courses/${course.id}/holes/${hole.id}/strategies">
-    <input type="hidden" name="bag_id" value="${bag.id}">
-    <label>Strategy name: <input type="text" name="name" required placeholder="e.g. safe, aggressive"></label><br>
-    <h3>Shots</h3>
-    ${shotRows.join("")}
-    <h3>Strategy Notes</h3>
-    <label>Preferred miss: <input type="text" name="preferred_miss" placeholder="e.g. left side"></label><br>
-    <label>No-go zone: <input type="text" name="no_go_zone_0" placeholder="e.g. bunker right"></label><br>
-    <label>No-go zone: <input type="text" name="no_go_zone_1" placeholder="e.g. OOB left"></label><br>
-    <label>Overall notes:<br><textarea name="overall_notes" rows="3" cols="40"></textarea></label><br>
-    <button type="submit">Create Strategy</button>
-  </form>
-  <p><a href="/courses/${course.id}/holes/${hole.id}/strategies">Back to strategies</a></p>
-</body></html>`;
+  ${error ? `<div class="error">${escapeHtml(error)}</div>` : ""}
+  <div class="card">
+    <form method="POST" action="/courses/${course.id}/holes/${hole.id}/strategies">
+      <input type="hidden" name="bag_id" value="${bag.id}">
+      <div class="form-group">
+        <label for="name">Strategy name</label>
+        <input type="text" id="name" name="name" required placeholder="e.g. safe, aggressive">
+      </div>
+      <h3>Shots</h3>
+      ${shotRows.join("")}
+      <h3>Strategy Notes</h3>
+      <div class="form-group">
+        <label for="preferred_miss">Preferred miss</label>
+        <input type="text" id="preferred_miss" name="preferred_miss" placeholder="e.g. left side">
+      </div>
+      <div class="form-group">
+        <label>No-go zone</label>
+        <input type="text" name="no_go_zone_0" placeholder="e.g. bunker right">
+      </div>
+      <div class="form-group">
+        <label>No-go zone</label>
+        <input type="text" name="no_go_zone_1" placeholder="e.g. OOB left">
+      </div>
+      <div class="form-group">
+        <label for="overall_notes">Overall notes</label>
+        <textarea id="overall_notes" name="overall_notes" rows="3"></textarea>
+      </div>
+      <div class="form-actions">
+        <button type="submit">Create Strategy</button>
+      </div>
+    </form>
+  </div>
+  <p><a href="/courses/${course.id}/holes/${hole.id}/strategies">Back to strategies</a></p>`;
+  return layout("New Strategy", body);
 }
 
 function strategyDetailPage(
@@ -592,31 +603,31 @@ function strategyDetailPage(
     })
     .join("");
 
-  return `${pageHead(strategy.name)}
-  ${navBar()}
-  <h1>${escapeHtml(strategy.name)} - Hole ${hole.hole_number} (${escapeHtml(course.name)})</h1>
+  const body = `<h1>${escapeHtml(strategy.name)} - Hole ${hole.hole_number} (${escapeHtml(course.name)})</h1>
   <p>Par ${hole.par} | ${hole.yardage} yards | Bag: ${bag ? escapeHtml(bag.name) : "deleted"}</p>
-  <p>
-    <a href="/courses/${course.id}/holes/${hole.id}/strategies/${strategy.id}/edit">Edit strategy</a>
-  </p>
-  <form method="POST" action="/courses/${course.id}/holes/${hole.id}/strategies/${strategy.id}/delete" style="display:inline">
-    <button type="submit">Delete strategy</button>
-  </form>
+  <div class="actions">
+    <a href="/courses/${course.id}/holes/${hole.id}/strategies/${strategy.id}/edit" class="btn">Edit strategy</a>
+    <form method="POST" action="/courses/${course.id}/holes/${hole.id}/strategies/${strategy.id}/delete">
+      <button type="submit" class="btn btn-danger">Delete strategy</button>
+    </form>
+  </div>
   <h2>Shots</h2>
   ${
     shots.length === 0
-      ? "<p>No shots planned.</p>"
-      : `<table>
+      ? `<p class="empty">No shots planned.</p>`
+      : `<div class="table-wrap"><table>
           <thead><tr><th>#</th><th>Club</th><th>Carry</th><th>Target</th><th>Notes</th></tr></thead>
           <tbody>${shotRows}</tbody>
-        </table>`
+        </table></div>`
   }
   <h2>Strategy Notes</h2>
-  <p><strong>Preferred miss:</strong> ${escapeHtml(strategy.preferred_miss) || "-"}</p>
-  <p><strong>No-go zones:</strong> ${noGoZones.length > 0 ? noGoZones.map(escapeHtml).join(", ") : "-"}</p>
-  <p><strong>Notes:</strong> ${escapeHtml(strategy.overall_notes) || "-"}</p>
-  <p><a href="/courses/${course.id}/holes/${hole.id}/strategies">Back to strategies</a></p>
-</body></html>`;
+  <div class="card">
+    <p><strong>Preferred miss:</strong> ${escapeHtml(strategy.preferred_miss) || "-"}</p>
+    <p><strong>No-go zones:</strong> ${noGoZones.length > 0 ? noGoZones.map(escapeHtml).join(", ") : "-"}</p>
+    <p><strong>Notes:</strong> ${escapeHtml(strategy.overall_notes) || "-"}</p>
+  </div>
+  <p><a href="/courses/${course.id}/holes/${hole.id}/strategies">Back to strategies</a></p>`;
+  return layout(strategy.name, body);
 }
 
 function editStrategyPage(
@@ -645,12 +656,26 @@ function editStrategyPage(
     const shot = shots[i];
     const target = shot ? (JSON.parse(shot.target) as { lat?: number; lng?: number }) : {};
 
-    shotFields.push(`<div>
+    shotFields.push(`<div class="shot-block">
       <h4>Shot ${i + 1}</h4>
-      <label>Club: <select name="shot_club_${i}"><option value="">--</option>${clubOptions(shot?.club ?? "")}</select></label>
-      <label>Target Lat: <input type="text" name="shot_target_lat_${i}" value="${target.lat ?? ""}"></label>
-      <label>Target Lng: <input type="text" name="shot_target_lng_${i}" value="${target.lng ?? ""}"></label><br>
-      <label>Notes: <input type="text" name="shot_notes_${i}" value="${shot ? escapeHtml(shot.notes) : ""}"></label>
+      <div class="form-group">
+        <label>Club</label>
+        <select name="shot_club_${i}"><option value="">--</option>${clubOptions(shot?.club ?? "")}</select>
+      </div>
+      <div class="coord-row">
+        <div class="form-group">
+          <label>Target Lat</label>
+          <input type="text" name="shot_target_lat_${i}" value="${target.lat ?? ""}">
+        </div>
+        <div class="form-group">
+          <label>Target Lng</label>
+          <input type="text" name="shot_target_lng_${i}" value="${target.lng ?? ""}">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Notes</label>
+        <input type="text" name="shot_notes_${i}" value="${shot ? escapeHtml(shot.notes) : ""}">
+      </div>
     </div>`);
   }
 
@@ -659,43 +684,53 @@ function editStrategyPage(
   const zoneFields: string[] = [];
   for (let i = 0; i < totalZones; i++) {
     zoneFields.push(
-      `<label>No-go zone: <input type="text" name="no_go_zone_${i}" value="${escapeHtml(noGoZones[i] ?? "")}"></label><br>`
+      `<div class="form-group">
+        <label>No-go zone</label>
+        <input type="text" name="no_go_zone_${i}" value="${escapeHtml(noGoZones[i] ?? "")}">
+      </div>`
     );
   }
 
-  return `${pageHead("Edit Strategy")}
-  ${navBar()}
-  <h1>Edit Strategy - Hole ${hole.hole_number} (${escapeHtml(course.name)})</h1>
+  const body = `<h1>Edit Strategy - Hole ${hole.hole_number} (${escapeHtml(course.name)})</h1>
   <p>Bag: ${bag ? escapeHtml(bag.name) : "deleted"}</p>
-  ${error ? `<p style="color:red">${escapeHtml(error)}</p>` : ""}
-  <form method="POST" action="/courses/${course.id}/holes/${hole.id}/strategies/${strategy.id}">
-    <label>Strategy name: <input type="text" name="name" required value="${escapeHtml(strategy.name)}"></label><br>
-    <h3>Shots</h3>
-    ${shotFields.join("")}
-    <h3>Strategy Notes</h3>
-    <label>Preferred miss: <input type="text" name="preferred_miss" value="${escapeHtml(strategy.preferred_miss)}"></label><br>
-    ${zoneFields.join("")}
-    <label>Overall notes:<br><textarea name="overall_notes" rows="3" cols="40">${escapeHtml(strategy.overall_notes)}</textarea></label><br>
-    <button type="submit">Save Strategy</button>
-  </form>
-  <p><a href="/courses/${course.id}/holes/${hole.id}/strategies/${strategy.id}">Back to strategy</a></p>
-</body></html>`;
+  ${error ? `<div class="error">${escapeHtml(error)}</div>` : ""}
+  <div class="card">
+    <form method="POST" action="/courses/${course.id}/holes/${hole.id}/strategies/${strategy.id}">
+      <div class="form-group">
+        <label for="name">Strategy name</label>
+        <input type="text" id="name" name="name" required value="${escapeHtml(strategy.name)}">
+      </div>
+      <h3>Shots</h3>
+      ${shotFields.join("")}
+      <h3>Strategy Notes</h3>
+      <div class="form-group">
+        <label for="preferred_miss">Preferred miss</label>
+        <input type="text" id="preferred_miss" name="preferred_miss" value="${escapeHtml(strategy.preferred_miss)}">
+      </div>
+      ${zoneFields.join("")}
+      <div class="form-group">
+        <label for="overall_notes">Overall notes</label>
+        <textarea id="overall_notes" name="overall_notes" rows="3">${escapeHtml(strategy.overall_notes)}</textarea>
+      </div>
+      <div class="form-actions">
+        <button type="submit">Save Strategy</button>
+      </div>
+    </form>
+  </div>
+  <p><a href="/courses/${course.id}/holes/${hole.id}/strategies/${strategy.id}">Back to strategy</a></p>`;
+  return layout("Edit Strategy", body);
 }
 
 function errorPage(course: CourseRow, hole: HoleRow, message: string): string {
-  return `${pageHead("Error")}
-  ${navBar()}
-  <h1>Error</h1>
-  <p style="color:red">${escapeHtml(message)}</p>
-  <p><a href="/courses/${course.id}/holes/${hole.id}/strategies">Back to strategies</a></p>
-</body></html>`;
+  const body = `<h1>Error</h1>
+  <div class="error">${escapeHtml(message)}</div>
+  <p><a href="/courses/${course.id}/holes/${hole.id}/strategies">Back to strategies</a></p>`;
+  return layout("Error", body);
 }
 
 function notFoundPage(message: string): string {
-  return `${pageHead("Not Found")}
-  ${navBar()}
-  <h1>Not Found</h1>
+  const body = `<h1>Not Found</h1>
   <p>${escapeHtml(message)}</p>
-  <p><a href="/courses">Back to courses</a></p>
-</body></html>`;
+  <p><a href="/courses">Back to courses</a></p>`;
+  return layout("Not Found", body);
 }

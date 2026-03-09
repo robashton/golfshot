@@ -1,0 +1,17 @@
+[2026-03-08T12:12:43.522Z] Started: npx tsx scripts/seed.ts && PORT=8085 npx tsx src/index.ts (pid: 15322)
+[2026-03-08T12:12:43.532Z] ^D
+[2026-03-08T12:12:43.735Z] [1G
+[2026-03-08T12:12:43.735Z] [0K
+[2026-03-08T12:12:44.476Z] 
+[2026-03-08T12:12:44.476Z] Seed complete:
+[2026-03-08T12:12:44.476Z] 
+[2026-03-08T12:12:44.476Z]   Migrations: applied
+[2026-03-08T12:12:44.476Z]   User dev@golfshot.local: created (id=1)
+[2026-03-08T12:12:44.476Z]   Course "Mearns Castle Golf Academy": created (id=1, 2 holes)
+[2026-03-08T12:12:44.476Z]   Bag "user": created (id=1, active, 4 clubs)
+[2026-03-08T12:12:44.476Z] 
+[2026-03-08T12:12:44.484Z] [1G[0K⠙
+[2026-03-08T12:12:44.484Z] [1G[0K
+[2026-03-08T12:12:44.637Z] [1G
+[2026-03-08T12:12:44.637Z] [0K
+[2026-03-08T12:12:44.878Z] Golfshot server listening on http://localhost:8085

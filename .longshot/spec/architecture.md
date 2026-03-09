@@ -22,6 +22,9 @@ Play mode normalizes orientation: tee at bottom, green toward top.
 
 ## Technical stack
 - **Server**: Express (TypeScript) with server-rendered HTML
+- **Static assets**: `public/` directory served via `express.static` (CSS, future JS/images)
+- **Styling**: Single `public/styles.css` -- golf-themed colour palette (forest green, fairway green, cream/off-white, gold accents), mobile-first responsive layout with breakpoints at 768px and 1024px
+- **Layout**: Shared `src/layout.ts` exports `layout(title, body, nav?)` wrapper used by all page functions -- provides consistent `<head>`, nav bar (Dashboard/Courses/Bags + logout), and `<main>` container
 - **Database**: SQLite via better-sqlite3 (stored at `data/golfshot.db`)
 - **Auth**: bcrypt password hashing, cookie-based sessions (SQLite-backed session store)
 - **External data**: OpenStreetMap (Nominatim search + Overpass API for hole geometry). ODbL license, no API key required.

@@ -1,3 +1,5 @@
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import express from "express";
 import session from "express-session";
 import type Database from "better-sqlite3";
@@ -8,9 +10,12 @@ import { createCoursesRouter } from "./routes/courses.js";
 import { createBagsRouter } from "./routes/bags.js";
 import { createStrategiesRouter } from "./routes/strategies.js";
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
 export function createApp(db: Database.Database): express.Express {
   const app = express();
 
+  app.use(express.static(path.join(__dirname, "..", "public")));
   app.use(express.urlencoded({ extended: false }));
 
   app.use(

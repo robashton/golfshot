@@ -5,6 +5,7 @@ import { searchGolfCourses } from "../osm/nominatim.js";
 import { fetchCourseData } from "../osm/overpass.js";
 import type { NominatimResult } from "../osm/nominatim.js";
 import type { ParsedCourse } from "../osm/overpass.js";
+import { layout, escapeHtml } from "../layout.js";
 
 interface CourseRow {
   id: number;
@@ -530,25 +531,6 @@ function buildGeometryFromBody(body: Record<string, string | undefined>): HoleGe
   return geometry;
 }
 
-function escapeHtml(str: string): string {
-  return str
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
-
-function pageHead(title: string): string {
-  return `<!DOCTYPE html>
-<html lang="en">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>${escapeHtml(title)} - Golfshot</title></head>
-<body>`;
-}
-
-function navBar(): string {
-  return `<nav><a href="/dashboard">Dashboard</a> | <a href="/courses">Courses</a> | <a href="/bags">My Bags</a></nav><hr>`;
-}
-
 function coursesListPage(courses: CourseWithCount[]): string {
   const rows = courses
     .map(
@@ -561,32 +543,41 @@ function coursesListPage(courses: CourseWithCount[]): string {
     )
     .join("");
 
-  return `${pageHead("Courses")}
-  ${navBar()}
-  <h1>Courses</h1>
-  <p><a href="/courses/new">Create course</a> | <a href="/courses/import">Import course</a></p>
+  const body = `<h1>Courses</h1>
+  <div class="actions">
+    <a href="/courses/new" class="btn">Create course</a>
+    <a href="/courses/import" class="btn">Import course</a>
+  </div>
   ${
     courses.length === 0
-      ? "<p>No courses yet.</p>"
-      : `<table>
+      ? `<p class="empty">No courses yet.</p>`
+      : `<div class="table-wrap"><table>
           <thead><tr><th>Name</th><th>Location</th><th>Holes</th></tr></thead>
           <tbody>${rows}</tbody>
-        </table>`
-  }
-</body></html>`;
+        </table></div>`
+  }`;
+  return layout("Courses", body);
 }
 
 function newCoursePage(error?: string): string {
-  return `${pageHead("New Course")}
-  ${navBar()}
-  <h1>New Course</h1>
-  ${error ? `<p style="color:red">${escapeHtml(error)}</p>` : ""}
-  <form method="POST" action="/courses">
-    <label>Name: <input type="text" name="name" required></label><br>
-    <label>Location: <input type="text" name="location"></label><br>
-    <button type="submit">Create Course</button>
-  </form>
-</body></html>`;
+  const body = `<h1>New Course</h1>
+  ${error ? `<div class="error">${escapeHtml(error)}</div>` : ""}
+  <div class="card">
+    <form method="POST" action="/courses">
+      <div class="form-group">
+        <label for="name">Name</label>
+        <input type="text" id="name" name="name" required>
+      </div>
+      <div class="form-group">
+        <label for="location">Location</label>
+        <input type="text" id="location" name="location">
+      </div>
+      <div class="form-actions">
+        <button type="submit">Create Course</button>
+      </div>
+    </form>
+  </div>`;
+  return layout("New Course", body);
 }
 
 function courseDetailPage(course: CourseRow, holes: HoleRow[]): string {
@@ -599,85 +590,138 @@ function courseDetailPage(course: CourseRow, holes: HoleRow[]): string {
         <td>${h.yardage}</td>
         <td>${geo.tee ? `${geo.tee.lat.toFixed(6)}, ${geo.tee.lng.toFixed(6)}` : "-"}</td>
         <td>${geo.green ? `${geo.green.lat.toFixed(6)}, ${geo.green.lng.toFixed(6)}` : "-"}</td>
-        <td>
+        <td class="actions">
+          <a href="/courses/${course.id}/holes/${h.id}/strategies">Strategies</a>
           <a href="/courses/${course.id}/holes/${h.id}/edit">Edit</a>
-          <form method="POST" action="/courses/${course.id}/holes/${h.id}/delete" style="display:inline">
-            <button type="submit">Delete</button>
+          <form method="POST" action="/courses/${course.id}/holes/${h.id}/delete">
+            <button type="submit" class="btn btn-sm btn-danger">Delete</button>
           </form>
         </td>
       </tr>`;
     })
     .join("");
 
-  return `${pageHead(course.name)}
-  ${navBar()}
-  <h1>${escapeHtml(course.name)}</h1>
-  <p>Location: ${escapeHtml(course.location) || "N/A"}</p>
-  <p>
-    <a href="/courses/${course.id}/edit">Edit course</a> |
-    <a href="/courses/${course.id}/holes/new">Add hole</a>
-  </p>
-  <form method="POST" action="/courses/${course.id}/delete" style="display:inline">
-    <button type="submit">Delete course</button>
-  </form>
+  const body = `<h1>${escapeHtml(course.name)}</h1>
+  <p>${escapeHtml(course.location) || "No location set"}</p>
+  <div class="actions">
+    <a href="/courses/${course.id}/edit" class="btn">Edit course</a>
+    <a href="/courses/${course.id}/holes/new" class="btn">Add hole</a>
+    <form method="POST" action="/courses/${course.id}/delete">
+      <button type="submit" class="btn btn-danger">Delete course</button>
+    </form>
+  </div>
   <h2>Holes</h2>
   ${
     holes.length === 0
-      ? "<p>No holes yet. <a href=\"/courses/" + course.id + "/holes/new\">Add one</a>.</p>"
-      : `<table>
+      ? `<p class="empty">No holes yet. <a href="/courses/${course.id}/holes/new">Add one</a>.</p>`
+      : `<div class="table-wrap"><table>
           <thead><tr><th>#</th><th>Par</th><th>Yards</th><th>Tee</th><th>Green</th><th>Actions</th></tr></thead>
           <tbody>${holeRows}</tbody>
-        </table>`
-  }
-</body></html>`;
+        </table></div>`
+  }`;
+  return layout(course.name, body);
 }
 
 function editCoursePage(course: CourseRow, error?: string): string {
-  return `${pageHead("Edit Course")}
-  ${navBar()}
-  <h1>Edit Course</h1>
-  ${error ? `<p style="color:red">${escapeHtml(error)}</p>` : ""}
-  <form method="POST" action="/courses/${course.id}">
-    <label>Name: <input type="text" name="name" required value="${escapeHtml(course.name)}"></label><br>
-    <label>Location: <input type="text" name="location" value="${escapeHtml(course.location)}"></label><br>
-    <button type="submit">Save</button>
-  </form>
-  <p><a href="/courses/${course.id}">Back to course</a></p>
-</body></html>`;
+  const body = `<h1>Edit Course</h1>
+  ${error ? `<div class="error">${escapeHtml(error)}</div>` : ""}
+  <div class="card">
+    <form method="POST" action="/courses/${course.id}">
+      <div class="form-group">
+        <label for="name">Name</label>
+        <input type="text" id="name" name="name" required value="${escapeHtml(course.name)}">
+      </div>
+      <div class="form-group">
+        <label for="location">Location</label>
+        <input type="text" id="location" name="location" value="${escapeHtml(course.location)}">
+      </div>
+      <div class="form-actions">
+        <button type="submit">Save</button>
+      </div>
+    </form>
+  </div>
+  <p><a href="/courses/${course.id}">Back to course</a></p>`;
+  return layout("Edit Course", body);
 }
 
 function newHolePage(course: CourseRow, error?: string): string {
-  return `${pageHead("New Hole")}
-  ${navBar()}
-  <h1>Add Hole to ${escapeHtml(course.name)}</h1>
-  ${error ? `<p style="color:red">${escapeHtml(error)}</p>` : ""}
-  <form method="POST" action="/courses/${course.id}/holes">
-    <label>Hole Number: <input type="number" name="hole_number" required min="1"></label><br>
-    <label>Par: <input type="number" name="par" required min="1" max="6"></label><br>
-    <label>Yardage: <input type="number" name="yardage" required min="1"></label><br>
-    <h3>Tee</h3>
-    <label>Lat: <input type="text" name="tee_lat"></label>
-    <label>Lng: <input type="text" name="tee_lng"></label><br>
-    <h3>Green</h3>
-    <label>Lat: <input type="text" name="green_lat"></label>
-    <label>Lng: <input type="text" name="green_lng"></label><br>
-    <h3>Hazards</h3>
-    <div>
-      <label>Name: <input type="text" name="hazard_name_0"></label>
-      <label>Lat: <input type="text" name="hazard_lat_0"></label>
-      <label>Lng: <input type="text" name="hazard_lng_0"></label>
-    </div>
-    <h3>Layups</h3>
-    <div>
-      <label>Name: <input type="text" name="layup_name_0"></label>
-      <label>Lat: <input type="text" name="layup_lat_0"></label>
-      <label>Lng: <input type="text" name="layup_lng_0"></label>
-    </div>
-    <br>
-    <button type="submit">Add Hole</button>
-  </form>
-  <p><a href="/courses/${course.id}">Back to course</a></p>
-</body></html>`;
+  const body = `<h1>Add Hole to ${escapeHtml(course.name)}</h1>
+  ${error ? `<div class="error">${escapeHtml(error)}</div>` : ""}
+  <div class="card">
+    <form method="POST" action="/courses/${course.id}/holes">
+      <div class="form-group">
+        <label for="hole_number">Hole Number</label>
+        <input type="number" id="hole_number" name="hole_number" required min="1">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="par">Par</label>
+          <input type="number" id="par" name="par" required min="1" max="6">
+        </div>
+        <div class="form-group">
+          <label for="yardage">Yardage</label>
+          <input type="number" id="yardage" name="yardage" required min="1">
+        </div>
+      </div>
+      <h3>Tee</h3>
+      <div class="coord-row">
+        <div class="form-group">
+          <label for="tee_lat">Lat</label>
+          <input type="text" id="tee_lat" name="tee_lat">
+        </div>
+        <div class="form-group">
+          <label for="tee_lng">Lng</label>
+          <input type="text" id="tee_lng" name="tee_lng">
+        </div>
+      </div>
+      <h3>Green</h3>
+      <div class="coord-row">
+        <div class="form-group">
+          <label for="green_lat">Lat</label>
+          <input type="text" id="green_lat" name="green_lat">
+        </div>
+        <div class="form-group">
+          <label for="green_lng">Lng</label>
+          <input type="text" id="green_lng" name="green_lng">
+        </div>
+      </div>
+      <h3>Hazards</h3>
+      <div class="form-group">
+        <label>Name</label>
+        <input type="text" name="hazard_name_0">
+      </div>
+      <div class="coord-row">
+        <div class="form-group">
+          <label>Lat</label>
+          <input type="text" name="hazard_lat_0">
+        </div>
+        <div class="form-group">
+          <label>Lng</label>
+          <input type="text" name="hazard_lng_0">
+        </div>
+      </div>
+      <h3>Layups</h3>
+      <div class="form-group">
+        <label>Name</label>
+        <input type="text" name="layup_name_0">
+      </div>
+      <div class="coord-row">
+        <div class="form-group">
+          <label>Lat</label>
+          <input type="text" name="layup_lat_0">
+        </div>
+        <div class="form-group">
+          <label>Lng</label>
+          <input type="text" name="layup_lng_0">
+        </div>
+      </div>
+      <div class="form-actions">
+        <button type="submit">Add Hole</button>
+      </div>
+    </form>
+  </div>
+  <p><a href="/courses/${course.id}">Back to course</a></p>`;
+  return layout("New Hole", body);
 }
 
 function editHolePage(course: CourseRow, hole: HoleRow, error?: string): string {
@@ -685,81 +729,163 @@ function editHolePage(course: CourseRow, hole: HoleRow, error?: string): string 
 
   const hazardFields = (geo.hazards ?? [])
     .map(
-      (h, i) => `<div>
-        <label>Name: <input type="text" name="hazard_name_${i}" value="${escapeHtml(h.name)}"></label>
-        <label>Lat: <input type="text" name="hazard_lat_${i}" value="${h.lat}"></label>
-        <label>Lng: <input type="text" name="hazard_lng_${i}" value="${h.lng}"></label>
+      (h, i) => `<div class="shot-block">
+        <div class="form-group">
+          <label>Name</label>
+          <input type="text" name="hazard_name_${i}" value="${escapeHtml(h.name)}">
+        </div>
+        <div class="coord-row">
+          <div class="form-group">
+            <label>Lat</label>
+            <input type="text" name="hazard_lat_${i}" value="${h.lat}">
+          </div>
+          <div class="form-group">
+            <label>Lng</label>
+            <input type="text" name="hazard_lng_${i}" value="${h.lng}">
+          </div>
+        </div>
       </div>`
     )
     .join("");
 
   const layupFields = (geo.layups ?? [])
     .map(
-      (l, i) => `<div>
-        <label>Name: <input type="text" name="layup_name_${i}" value="${escapeHtml(l.name)}"></label>
-        <label>Lat: <input type="text" name="layup_lat_${i}" value="${l.lat}"></label>
-        <label>Lng: <input type="text" name="layup_lng_${i}" value="${l.lng}"></label>
+      (l, i) => `<div class="shot-block">
+        <div class="form-group">
+          <label>Name</label>
+          <input type="text" name="layup_name_${i}" value="${escapeHtml(l.name)}">
+        </div>
+        <div class="coord-row">
+          <div class="form-group">
+            <label>Lat</label>
+            <input type="text" name="layup_lat_${i}" value="${l.lat}">
+          </div>
+          <div class="form-group">
+            <label>Lng</label>
+            <input type="text" name="layup_lng_${i}" value="${l.lng}">
+          </div>
+        </div>
       </div>`
     )
     .join("");
 
-  // Add one empty row for hazards/layups if none exist
-  const hazardSection = hazardFields || `<div>
-    <label>Name: <input type="text" name="hazard_name_0"></label>
-    <label>Lat: <input type="text" name="hazard_lat_0"></label>
-    <label>Lng: <input type="text" name="hazard_lng_0"></label>
+  const hazardSection = hazardFields || `<div class="shot-block">
+    <div class="form-group">
+      <label>Name</label>
+      <input type="text" name="hazard_name_0">
+    </div>
+    <div class="coord-row">
+      <div class="form-group">
+        <label>Lat</label>
+        <input type="text" name="hazard_lat_0">
+      </div>
+      <div class="form-group">
+        <label>Lng</label>
+        <input type="text" name="hazard_lng_0">
+      </div>
+    </div>
   </div>`;
 
-  const layupSection = layupFields || `<div>
-    <label>Name: <input type="text" name="layup_name_0"></label>
-    <label>Lat: <input type="text" name="layup_lat_0"></label>
-    <label>Lng: <input type="text" name="layup_lng_0"></label>
+  const layupSection = layupFields || `<div class="shot-block">
+    <div class="form-group">
+      <label>Name</label>
+      <input type="text" name="layup_name_0">
+    </div>
+    <div class="coord-row">
+      <div class="form-group">
+        <label>Lat</label>
+        <input type="text" name="layup_lat_0">
+      </div>
+      <div class="form-group">
+        <label>Lng</label>
+        <input type="text" name="layup_lng_0">
+      </div>
+    </div>
   </div>`;
 
-  return `${pageHead("Edit Hole")}
-  ${navBar()}
-  <h1>Edit Hole ${hole.hole_number} - ${escapeHtml(course.name)}</h1>
-  ${error ? `<p style="color:red">${escapeHtml(error)}</p>` : ""}
-  <form method="POST" action="/courses/${course.id}/holes/${hole.id}">
-    <label>Hole Number: <input type="number" name="hole_number" required min="1" value="${hole.hole_number}"></label><br>
-    <label>Par: <input type="number" name="par" required min="1" max="6" value="${hole.par}"></label><br>
-    <label>Yardage: <input type="number" name="yardage" required min="1" value="${hole.yardage}"></label><br>
-    <h3>Tee</h3>
-    <label>Lat: <input type="text" name="tee_lat" value="${geo.tee?.lat ?? ""}"></label>
-    <label>Lng: <input type="text" name="tee_lng" value="${geo.tee?.lng ?? ""}"></label><br>
-    <h3>Green</h3>
-    <label>Lat: <input type="text" name="green_lat" value="${geo.green?.lat ?? ""}"></label>
-    <label>Lng: <input type="text" name="green_lng" value="${geo.green?.lng ?? ""}"></label><br>
-    <h3>Hazards</h3>
-    ${hazardSection}
-    <h3>Layups</h3>
-    ${layupSection}
-    <br>
-    <button type="submit">Save Hole</button>
-  </form>
-  <p><a href="/courses/${course.id}">Back to course</a></p>
-</body></html>`;
+  const body = `<h1>Edit Hole ${hole.hole_number} - ${escapeHtml(course.name)}</h1>
+  ${error ? `<div class="error">${escapeHtml(error)}</div>` : ""}
+  <div class="card">
+    <form method="POST" action="/courses/${course.id}/holes/${hole.id}">
+      <div class="form-group">
+        <label for="hole_number">Hole Number</label>
+        <input type="number" id="hole_number" name="hole_number" required min="1" value="${hole.hole_number}">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="par">Par</label>
+          <input type="number" id="par" name="par" required min="1" max="6" value="${hole.par}">
+        </div>
+        <div class="form-group">
+          <label for="yardage">Yardage</label>
+          <input type="number" id="yardage" name="yardage" required min="1" value="${hole.yardage}">
+        </div>
+      </div>
+      <h3>Tee</h3>
+      <div class="coord-row">
+        <div class="form-group">
+          <label>Lat</label>
+          <input type="text" name="tee_lat" value="${geo.tee?.lat ?? ""}">
+        </div>
+        <div class="form-group">
+          <label>Lng</label>
+          <input type="text" name="tee_lng" value="${geo.tee?.lng ?? ""}">
+        </div>
+      </div>
+      <h3>Green</h3>
+      <div class="coord-row">
+        <div class="form-group">
+          <label>Lat</label>
+          <input type="text" name="green_lat" value="${geo.green?.lat ?? ""}">
+        </div>
+        <div class="form-group">
+          <label>Lng</label>
+          <input type="text" name="green_lng" value="${geo.green?.lng ?? ""}">
+        </div>
+      </div>
+      <h3>Hazards</h3>
+      ${hazardSection}
+      <h3>Layups</h3>
+      ${layupSection}
+      <div class="form-actions">
+        <button type="submit">Save Hole</button>
+      </div>
+    </form>
+  </div>
+  <p><a href="/courses/${course.id}">Back to course</a></p>`;
+  return layout("Edit Hole", body);
 }
 
 function importPage(error?: string): string {
-  return `${pageHead("Import Course")}
-  ${navBar()}
-  <h1>Import Course</h1>
-  ${error ? `<p style="color:red">${escapeHtml(error)}</p>` : ""}
-  <h2>Search OpenStreetMap</h2>
-  <form method="GET" action="/courses/import/search">
-    <input type="text" name="q" placeholder="Course name..." required>
-    <button type="submit">Search</button>
-  </form>
-  <hr>
-  <h2>Import from seed data (JSON)</h2>
-  <p>Paste JSON in the format of <code>mearns_castle_geometry.json</code>:</p>
-  <form method="POST" action="/courses/import-seed">
-    <textarea name="json" rows="15" cols="60" required></textarea><br>
-    <button type="submit">Import</button>
-  </form>
-  <p><a href="/courses">Back to courses</a></p>
-</body></html>`;
+  const body = `<h1>Import Course</h1>
+  ${error ? `<div class="error">${escapeHtml(error)}</div>` : ""}
+  <div class="card">
+    <h2>Search OpenStreetMap</h2>
+    <form method="GET" action="/courses/import/search">
+      <div class="form-row">
+        <div class="form-group">
+          <input type="text" name="q" placeholder="Course name..." required>
+        </div>
+        <div class="form-group">
+          <button type="submit">Search</button>
+        </div>
+      </div>
+    </form>
+  </div>
+  <div class="card">
+    <h2>Import from seed data (JSON)</h2>
+    <p>Paste JSON in the format of <code>mearns_castle_geometry.json</code>:</p>
+    <form method="POST" action="/courses/import-seed">
+      <div class="form-group">
+        <textarea name="json" rows="10" required></textarea>
+      </div>
+      <div class="form-actions">
+        <button type="submit">Import</button>
+      </div>
+    </form>
+  </div>
+  <p><a href="/courses">Back to courses</a></p>`;
+  return layout("Import Course", body);
 }
 
 function formatLocation(result: NominatimResult): string {
@@ -781,25 +907,23 @@ function searchResultsPage(query: string, results: NominatimResult[]): string {
         lat: r.lat,
         lon: r.lon,
       });
-      return `<li style="margin-bottom:1em">
+      return `<div class="search-result">
         <strong>${escapeHtml(r.display_name.split(",")[0])}</strong><br>
-        ${escapeHtml(location)}<br>
+        <span class="card-meta">${escapeHtml(location)}</span><br>
         <a href="/courses/import/preview?${escapeHtml(params.toString())}">Preview &amp; Import</a>
-      </li>`;
+      </div>`;
     })
     .join("");
 
-  return `${pageHead("Search Results")}
-  ${navBar()}
-  <h1>Search Results</h1>
+  const body = `<h1>Search Results</h1>
   <p>Results for: <strong>${escapeHtml(query)}</strong></p>
   ${
     results.length === 0
-      ? "<p>No results found. Try a different search term.</p>"
-      : `<ul style="list-style:none;padding:0">${resultsList}</ul>`
+      ? `<p class="empty">No results found. Try a different search term.</p>`
+      : `<div class="card">${resultsList}</div>`
   }
-  <p><a href="/courses/import">Back to import</a></p>
-</body></html>`;
+  <p><a href="/courses/import">Back to import</a></p>`;
+  return layout("Search Results", body);
 }
 
 function previewPage(
@@ -824,14 +948,12 @@ function previewPage(
   const holeSection =
     course.holes.length === 0
       ? "<p>No hole data found in OpenStreetMap. Course will be imported with name and location only.</p>"
-      : `<table>
+      : `<div class="table-wrap"><table>
           <thead><tr><th>#</th><th>Par</th><th>Yards</th><th>Tee</th><th>Green</th></tr></thead>
           <tbody>${holeRows}</tbody>
-        </table>`;
+        </table></div>`;
 
-  return `${pageHead("Preview Import")}
-  ${navBar()}
-  <h1>Preview: ${escapeHtml(course.name)}</h1>
+  const body = `<h1>Preview: ${escapeHtml(course.name)}</h1>
   <p>Location: ${escapeHtml(course.location) || "N/A"}</p>
   <p>Holes found: ${course.holes.length}</p>
   ${holeSection}
@@ -842,18 +964,18 @@ function previewPage(
     <input type="hidden" name="location" value="${escapeHtml(course.location)}">
     ${lat ? `<input type="hidden" name="lat" value="${escapeHtml(lat)}">` : ""}
     ${lon ? `<input type="hidden" name="lon" value="${escapeHtml(lon)}">` : ""}
-    <button type="submit">Import this course</button>
+    <div class="form-actions">
+      <button type="submit">Import this course</button>
+    </div>
   </form>
   <p><a href="/courses/import">Back to search</a></p>
-  <p style="font-size:small;color:#666">Data &copy; OpenStreetMap contributors</p>
-</body></html>`;
+  <p class="osm-attribution">Data &copy; OpenStreetMap contributors</p>`;
+  return layout("Preview Import", body);
 }
 
 function notFoundPage(message: string): string {
-  return `${pageHead("Not Found")}
-  ${navBar()}
-  <h1>Not Found</h1>
+  const body = `<h1>Not Found</h1>
   <p>${escapeHtml(message)}</p>
-  <p><a href="/courses">Back to courses</a></p>
-</body></html>`;
+  <p><a href="/courses">Back to courses</a></p>`;
+  return layout("Not Found", body);
 }

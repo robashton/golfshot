@@ -1,6 +1,7 @@
 import { Router } from "express";
 import bcrypt from "bcrypt";
 import type Database from "better-sqlite3";
+import { layout, escapeHtml } from "../layout.js";
 
 const SALT_ROUNDS = 10;
 
@@ -90,35 +91,49 @@ export function createAuthRouter(db: Database.Database): Router {
 }
 
 function registerPage(error?: string): string {
-  return `<!DOCTYPE html>
-<html lang="en">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Register - Golfshot</title></head>
-<body>
+  const body = `<div class="auth-page">
   <h1>Register</h1>
-  ${error ? `<p style="color:red">${error}</p>` : ""}
-  <form method="POST" action="/register">
-    <label>Email: <input type="email" name="email" required></label><br>
-    <label>Password: <input type="password" name="password" required minlength="8"></label><br>
-    <button type="submit">Register</button>
-  </form>
-  <p>Already have an account? <a href="/login">Log in</a></p>
-</body>
-</html>`;
+  <div class="card">
+    ${error ? `<div class="error">${escapeHtml(error)}</div>` : ""}
+    <form method="POST" action="/register">
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input type="email" id="email" name="email" required>
+      </div>
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" required minlength="8">
+      </div>
+      <div class="form-actions">
+        <button type="submit">Register</button>
+      </div>
+    </form>
+  </div>
+  <p class="auth-footer">Already have an account? <a href="/login">Log in</a></p>
+</div>`;
+  return layout("Register", body, false);
 }
 
 function loginPage(error?: string): string {
-  return `<!DOCTYPE html>
-<html lang="en">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Login - Golfshot</title></head>
-<body>
+  const body = `<div class="auth-page">
   <h1>Login</h1>
-  ${error ? `<p style="color:red">${error}</p>` : ""}
-  <form method="POST" action="/login">
-    <label>Email: <input type="email" name="email" required></label><br>
-    <label>Password: <input type="password" name="password" required></label><br>
-    <button type="submit">Login</button>
-  </form>
-  <p>Don't have an account? <a href="/register">Register</a></p>
-</body>
-</html>`;
+  <div class="card">
+    ${error ? `<div class="error">${escapeHtml(error)}</div>` : ""}
+    <form method="POST" action="/login">
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input type="email" id="email" name="email" required>
+      </div>
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" required>
+      </div>
+      <div class="form-actions">
+        <button type="submit">Login</button>
+      </div>
+    </form>
+  </div>
+  <p class="auth-footer">Don't have an account? <a href="/register">Register</a></p>
+</div>`;
+  return layout("Login", body, false);
 }

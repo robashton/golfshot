@@ -1,6 +1,7 @@
 import { Router } from "express";
 import type Database from "better-sqlite3";
 import { requireAuth } from "../middleware/auth-guard.js";
+import { layout, escapeHtml } from "../layout.js";
 
 interface BagRow {
   id: number;
@@ -293,25 +294,6 @@ export function createBagsRouter(db: Database.Database): Router {
   return router;
 }
 
-function escapeHtml(str: string): string {
-  return str
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
-
-function pageHead(title: string): string {
-  return `<!DOCTYPE html>
-<html lang="en">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>${escapeHtml(title)} - Golfshot</title></head>
-<body>`;
-}
-
-function navBar(): string {
-  return `<nav><a href="/dashboard">Dashboard</a> | <a href="/courses">Courses</a> | <a href="/bags">My Bags</a></nav><hr>`;
-}
-
 function bagsListPage(bags: BagWithClubCount[]): string {
   const rows = bags
     .map(
@@ -319,36 +301,42 @@ function bagsListPage(bags: BagWithClubCount[]): string {
         `<tr>
           <td><a href="/bags/${b.id}">${escapeHtml(b.name)}</a></td>
           <td>${b.club_count}</td>
-          <td>${b.is_active ? "Active" : ""}</td>
+          <td>${b.is_active ? `<span class="badge badge-active">Active</span>` : ""}</td>
         </tr>`
     )
     .join("");
 
-  return `${pageHead("My Bags")}
-  ${navBar()}
-  <h1>My Bags</h1>
-  <p><a href="/bags/new">Create bag</a> | <a href="/bags/import">Import bag</a></p>
+  const body = `<h1>My Bags</h1>
+  <div class="actions">
+    <a href="/bags/new" class="btn">Create bag</a>
+    <a href="/bags/import" class="btn">Import bag</a>
+  </div>
   ${
     bags.length === 0
-      ? "<p>No bags yet.</p>"
-      : `<table>
+      ? `<p class="empty">No bags yet.</p>`
+      : `<div class="table-wrap"><table>
           <thead><tr><th>Name</th><th>Clubs</th><th>Status</th></tr></thead>
           <tbody>${rows}</tbody>
-        </table>`
-  }
-</body></html>`;
+        </table></div>`
+  }`;
+  return layout("My Bags", body);
 }
 
 function newBagPage(error?: string): string {
-  return `${pageHead("New Bag")}
-  ${navBar()}
-  <h1>New Bag</h1>
-  ${error ? `<p style="color:red">${escapeHtml(error)}</p>` : ""}
-  <form method="POST" action="/bags">
-    <label>Name: <input type="text" name="name" required></label><br>
-    <button type="submit">Create Bag</button>
-  </form>
-</body></html>`;
+  const body = `<h1>New Bag</h1>
+  ${error ? `<div class="error">${escapeHtml(error)}</div>` : ""}
+  <div class="card">
+    <form method="POST" action="/bags">
+      <div class="form-group">
+        <label for="name">Name</label>
+        <input type="text" id="name" name="name" required>
+      </div>
+      <div class="form-actions">
+        <button type="submit">Create Bag</button>
+      </div>
+    </form>
+  </div>`;
+  return layout("New Bag", body);
 }
 
 function bagDetailPage(bag: BagRow, clubs: ClubRow[], error?: string): string {
@@ -359,98 +347,126 @@ function bagDetailPage(bag: BagRow, clubs: ClubRow[], error?: string): string {
           <td>${escapeHtml(c.name)}</td>
           <td>${c.carry_yards}</td>
           <td>
-            <form method="POST" action="/bags/${bag.id}/clubs/${c.id}/delete" style="display:inline">
-              <button type="submit">Remove</button>
+            <form method="POST" action="/bags/${bag.id}/clubs/${c.id}/delete">
+              <button type="submit" class="btn btn-sm btn-danger">Remove</button>
             </form>
           </td>
         </tr>`
     )
     .join("");
 
-  return `${pageHead(bag.name)}
-  ${navBar()}
-  <h1>${escapeHtml(bag.name)} ${bag.is_active ? "(Active)" : ""}</h1>
-  ${error ? `<p style="color:red">${escapeHtml(error)}</p>` : ""}
-  <p>
-    <a href="/bags/${bag.id}/edit">Edit bag</a>
-    ${!bag.is_active ? `| <form method="POST" action="/bags/${bag.id}/set-active" style="display:inline"><button type="submit">Set as active</button></form>` : ""}
-  </p>
-  <form method="POST" action="/bags/${bag.id}/delete" style="display:inline">
-    <button type="submit">Delete bag</button>
-  </form>
+  const body = `<h1>${escapeHtml(bag.name)} ${bag.is_active ? `<span class="badge badge-active">Active</span>` : ""}</h1>
+  ${error ? `<div class="error">${escapeHtml(error)}</div>` : ""}
+  <div class="actions">
+    <a href="/bags/${bag.id}/edit" class="btn">Edit bag</a>
+    ${!bag.is_active ? `<form method="POST" action="/bags/${bag.id}/set-active"><button type="submit" class="btn">Set as active</button></form>` : ""}
+    <form method="POST" action="/bags/${bag.id}/delete">
+      <button type="submit" class="btn btn-danger">Delete bag</button>
+    </form>
+  </div>
   <h2>Clubs</h2>
   ${
     clubs.length === 0
-      ? "<p>No clubs yet.</p>"
-      : `<table>
+      ? `<p class="empty">No clubs yet.</p>`
+      : `<div class="table-wrap"><table>
           <thead><tr><th>Club</th><th>Carry (yards)</th><th>Actions</th></tr></thead>
           <tbody>${clubRows}</tbody>
-        </table>`
+        </table></div>`
   }
-  <h3>Add Club</h3>
-  <form method="POST" action="/bags/${bag.id}/clubs">
-    <label>Club: <input type="text" name="club_name" required placeholder="e.g. 7i, Driver"></label>
-    <label>Carry (yards): <input type="number" name="carry_yards" required min="1"></label>
-    <button type="submit">Add</button>
-  </form>
-  <p><a href="/bags">Back to bags</a></p>
-</body></html>`;
+  <div class="card">
+    <h3>Add Club</h3>
+    <form method="POST" action="/bags/${bag.id}/clubs">
+      <div class="form-row">
+        <div class="form-group">
+          <label for="club_name">Club</label>
+          <input type="text" id="club_name" name="club_name" required placeholder="e.g. 7i, Driver">
+        </div>
+        <div class="form-group">
+          <label for="carry_yards">Carry (yards)</label>
+          <input type="number" id="carry_yards" name="carry_yards" required min="1">
+        </div>
+      </div>
+      <div class="form-actions">
+        <button type="submit">Add</button>
+      </div>
+    </form>
+  </div>
+  <p><a href="/bags">Back to bags</a></p>`;
+  return layout(bag.name, body);
 }
 
 function editBagPage(bag: BagRow, clubs: ClubRow[], error?: string): string {
   const clubFields = clubs
     .map(
       (c, i) =>
-        `<div>
-          <label>Club: <input type="text" name="club_name_${i}" value="${escapeHtml(c.name)}"></label>
-          <label>Carry: <input type="number" name="club_yards_${i}" value="${c.carry_yards}" min="1"></label>
+        `<div class="form-row">
+          <div class="form-group">
+            <label>Club</label>
+            <input type="text" name="club_name_${i}" value="${escapeHtml(c.name)}">
+          </div>
+          <div class="form-group">
+            <label>Carry</label>
+            <input type="number" name="club_yards_${i}" value="${c.carry_yards}" min="1">
+          </div>
         </div>`
     )
     .join("");
 
   // Add one empty row for adding a new club
   const nextIndex = clubs.length;
-  const emptyRow = `<div>
-    <label>Club: <input type="text" name="club_name_${nextIndex}" placeholder="e.g. 7i"></label>
-    <label>Carry: <input type="number" name="club_yards_${nextIndex}" min="1" placeholder="yards"></label>
+  const emptyRow = `<div class="form-row">
+    <div class="form-group">
+      <label>Club</label>
+      <input type="text" name="club_name_${nextIndex}" placeholder="e.g. 7i">
+    </div>
+    <div class="form-group">
+      <label>Carry</label>
+      <input type="number" name="club_yards_${nextIndex}" min="1" placeholder="yards">
+    </div>
   </div>`;
 
-  return `${pageHead("Edit Bag")}
-  ${navBar()}
-  <h1>Edit Bag</h1>
-  ${error ? `<p style="color:red">${escapeHtml(error)}</p>` : ""}
-  <form method="POST" action="/bags/${bag.id}">
-    <label>Name: <input type="text" name="name" required value="${escapeHtml(bag.name)}"></label><br>
-    <h3>Clubs</h3>
-    <p>Clear a club name to remove it on save.</p>
-    ${clubFields}
-    ${emptyRow}
-    <br>
-    <button type="submit">Save</button>
-  </form>
-  <p><a href="/bags/${bag.id}">Back to bag</a></p>
-</body></html>`;
+  const body = `<h1>Edit Bag</h1>
+  ${error ? `<div class="error">${escapeHtml(error)}</div>` : ""}
+  <div class="card">
+    <form method="POST" action="/bags/${bag.id}">
+      <div class="form-group">
+        <label for="name">Name</label>
+        <input type="text" id="name" name="name" required value="${escapeHtml(bag.name)}">
+      </div>
+      <h3>Clubs</h3>
+      <p class="card-meta">Clear a club name to remove it on save.</p>
+      ${clubFields}
+      ${emptyRow}
+      <div class="form-actions">
+        <button type="submit">Save</button>
+      </div>
+    </form>
+  </div>
+  <p><a href="/bags/${bag.id}">Back to bag</a></p>`;
+  return layout("Edit Bag", body);
 }
 
 function importBagPage(error?: string): string {
-  return `${pageHead("Import Bag")}
-  ${navBar()}
-  <h1>Import Bag</h1>
-  ${error ? `<p style="color:red">${escapeHtml(error)}</p>` : ""}
-  <p>Paste JSON in the format of <code>bag_profile.json</code>:</p>
-  <form method="POST" action="/bags/import-seed">
-    <textarea name="json" rows="15" cols="60" required></textarea><br>
-    <button type="submit">Import</button>
-  </form>
-  <p><a href="/bags">Back to bags</a></p>
-</body></html>`;
+  const body = `<h1>Import Bag</h1>
+  ${error ? `<div class="error">${escapeHtml(error)}</div>` : ""}
+  <div class="card">
+    <p>Paste JSON in the format of <code>bag_profile.json</code>:</p>
+    <form method="POST" action="/bags/import-seed">
+      <div class="form-group">
+        <textarea name="json" rows="10" required></textarea>
+      </div>
+      <div class="form-actions">
+        <button type="submit">Import</button>
+      </div>
+    </form>
+  </div>
+  <p><a href="/bags">Back to bags</a></p>`;
+  return layout("Import Bag", body);
 }
 
 function notFoundPage(message: string): string {
-  return `${pageHead("Not Found")}
-  ${navBar()}
-  <h1>Not Found</h1>
+  const body = `<h1>Not Found</h1>
   <p>${escapeHtml(message)}</p>
-  <p><a href="/bags">Back to bags</a></p>
-</body></html>`;
+  <p><a href="/bags">Back to bags</a></p>`;
+  return layout("Not Found", body);
 }

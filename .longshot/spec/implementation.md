@@ -7,11 +7,10 @@
 4. ~~Hole strategy planner~~ (**done** -- strategy CRUD with shots, clubs from bag, carry distances, no-go zones, 21 tests)
 5. ~~Public-data bootstrap~~ (**done** -- OSM search via Nominatim, course preview via Overpass, import with hole geometry, 9 tests)
 6. ~~Dev seed script + migrations~~ (**done** -- numbered migration system, idempotent seed script with dev user/course/bag)
-7. Edit mode (satellite basemap, marker capture, JSON save/load)
-8. Dispersion ellipses (projected shot ellipses aligned to hole direction)
-9. Printable export (pocket cards, booklet pages, print CSS)
-7. Dispersion ellipses (projected shot ellipses aligned to hole direction)
-8. Printable export (pocket cards, booklet pages, print CSS)
+7. ~~Golf-themed styling + shared layout~~ (**done** -- CSS file, layout helper, responsive mobile-first design, all 26 pages updated)
+8. Edit mode (satellite basemap, marker capture, JSON save/load)
+9. Dispersion ellipses (projected shot ellipses aligned to hole direction)
+10. Printable export (pocket cards, booklet pages, print CSS)
 
 ## Test suite
 88 tests total (vitest + supertest):
@@ -25,15 +24,19 @@
 - OSM integration tests (9)
 ## File structure
 shell.nix                           -- nix dev environment (node, sqlite)
+shell.nix                           -- nix dev environment (node, sqlite)
 package.json                        -- dependencies and scripts
 vitest.config.ts                    -- test runner config
 tsconfig.json                       -- TypeScript config
 CLAUDE.md                           -- dev guide and conventions
 scripts/
   seed.ts                           -- idempotent dev seed script (npm run seed)
+public/
+  styles.css                        -- golf-themed CSS (colour palette, responsive layout, component styles)
 src/
   index.ts                          -- server entry point (port 3000)
-  app.ts                            -- Express app setup (exported for testing)
+  app.ts                            -- Express app setup (static serving + exported for testing)
+  layout.ts                         -- shared HTML layout wrapper (nav, head, container)
   db/
     schema.ts                       -- initializeDatabase() delegates to runMigrations()
     migrate.ts                      -- migration runner (schema_version tracking, applies pending migrations)
